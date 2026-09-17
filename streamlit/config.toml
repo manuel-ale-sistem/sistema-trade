@@ -1,0 +1,17 @@
+[theme]
+# Forzamos la base oscura del sistema
+base = "dark"
+
+# Verde neón brillante para botones y elementos activos
+primaryColor = "#00FF66"
+
+# Negro absoluto para el fondo
+backgroundColor = "#000000"
+
+# Gris metálico oscuro para la barra lateral y contenedores
+secondaryBackgroundColor = "#121212"
+
+# Texto blanco puro
+textColor = "#FFFFFF"
+
+font = "sans serif"
