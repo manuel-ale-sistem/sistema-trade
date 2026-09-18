@@ -6,14 +6,18 @@ def guardar_historial(
     usuario: str,
     accion: str
 ) -> None:
-    """Registra una acción en el historial asociada a un folio."""
+    try:
+        supabase.table(
+            "historial"
+        ).insert(
+            {
+                "folio": folio,
+                "usuario": usuario,
+                "accion": accion
+            }
+        ).execute()
 
-    supabase.table(
-        "historial"
-    ).insert(
-        {
-            "folio": folio,
-            "usuario": usuario,
-            "accion": accion
-        }
-    ).execute()
+    except Exception as e:
+        print(
+            f"Error guardando historial: {e}"
+        )
