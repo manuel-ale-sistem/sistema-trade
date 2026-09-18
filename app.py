@@ -1,6 +1,10 @@
 import streamlit as st
 from utils.styles import aplicar_estilos_globales
 from supabase_config import supabase
+import os
+
+st.write("URL:", os.getenv("SUPABASE_URL"))
+st.write("KEY:", os.getenv("SUPABASE_KEY"))
 
 try:
     resultado = supabase.table("usuarios").select("*").limit(1).execute()
