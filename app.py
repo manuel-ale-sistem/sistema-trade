@@ -1,5 +1,16 @@
 import streamlit as st
 from utils.styles import aplicar_estilos_globales
+from supabase_config import supabase
+
+try:
+    resultado = supabase.table("usuarios").select("*").limit(1).execute()
+
+    st.success("✅ Conexión con Supabase OK")
+    st.write(resultado.data)
+
+except Exception as e:
+    st.error(f"❌ Error Supabase: {e}")
+    
 from database import (
     create_tables,
     crear_admin,
