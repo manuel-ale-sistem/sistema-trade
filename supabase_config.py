@@ -1,8 +1,11 @@
 from supabase import create_client
 import streamlit as st
 
-SUPABASE_URL = st.secrets["https://oczgkdnxzlfxpkoraljd.supabase.co"]
-SUPABASE_KEY = st.secrets["sb_publishable_CNmpqw5XA151VAaaJP9pPw_4T4VKONc"]
+print(st.secrets["SUPABASE_URL"])
+print(st.secrets["SUPABASE_KEY"][:20])
+
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
 supabase = create_client(
     SUPABASE_URL,
