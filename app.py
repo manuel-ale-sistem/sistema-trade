@@ -2,6 +2,15 @@ import streamlit as st
 from utils.styles import aplicar_estilos_globales
 from supabase_config import supabase
 import os
+from services.accesos_service import registrar_acceso
+
+if st.button("Prueba Acceso"):
+    registrar_acceso(
+        "admin",
+        "PRUEBA"
+    )
+
+    st.success("Acceso registrado")
 
 st.write("URL:", os.getenv("SUPABASE_URL"))
 st.write("KEY:", os.getenv("SUPABASE_KEY"))
