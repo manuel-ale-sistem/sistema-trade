@@ -1,28 +1,19 @@
-from database import get_connection
+from supabase_config import supabase
 
 
-def guardar_historial(folio: str, usuario: str, accion: str) -> None:
-    """Registra una acción en el historial de auditoría asociada a un folio y un usuario."""
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        
-        cur.execute(
-            """
-            INSERT INTO historial(
-                folio,
-                usuario,
-                accion
-            )
-            VALUES(?, ?, ?)
-            """,
-            (
-                folio,
-                usuario,
-                accion
-            )
-        )
-        
-        conn.commit()
-    finally:
-        conn.close()
+def guardar_historial(
+    folio: str,
+    usuario: str,
+    accion: str
+) -> None:
+    """Registra una acción en el historial asociada a un folio."""
+
+    supabase.table(
+        "historial"
+    ).insert(
+        {
+            "folio": folio,
+            "usuario": usuario,
+            "accion": accion
+        }
+    ).execute()
