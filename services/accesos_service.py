@@ -6,14 +6,18 @@ def registrar_acceso(
     accion: str,
     ip: str = ""
 ) -> None:
-    """Registra una acción de acceso de usuario en la tabla de auditoría."""
+    try:
+        supabase.table(
+            "accesos"
+        ).insert(
+            {
+                "usuario": usuario,
+                "accion": accion,
+                "ip": ip
+            }
+        ).execute()
 
-    supabase.table(
-        "accesos"
-    ).insert(
-        {
-            "usuario": usuario,
-            "accion": accion,
-            "ip": ip
-        }
-    ).execute()
+    except Exception as e:
+        print(
+            f"Error registrando acceso: {e}"
+        )
