@@ -1,35 +1,35 @@
-from database import get_connection
+from datetime import datetime, timedelta
+from supabase_config import supabase
 
 
 def cerrar_solicitudes_vencidas() -> int:
-    """Busca solicitudes con estatus 'CAPTURADA' que tengan 30 o más días de antigüedad
-    desde su fecha de creación y las cambia automáticamente a estatus 'CANCELADA'.
-
-    Returns:
-        int: Número de solicitudes que fueron cerradas/canceladas automáticamente.
+    """Busca solicitudes con estatus 'CAPTURADA' con 30 o más días de antigüedad 
+    y las actualiza a 'CANCELADA' en Supabase.
     """
-    conn = get_connection()
     try:
-        cur = conn.cursor()
+        hace_30_dias = (datetime.now() - timedelta(days=30)).isoformat()
 
-        cur.execute(
-            """
-            UPDATE solicitudes
-            SET
-                estatus = 'CANCELADA',
-                comentarios_admin = 'Cierre automático por antigüedad'
-            WHERE estatus = 'CAPTURADA'
-            AND (
-                julianday('now')
-                -
-                julianday(fecha)
-            ) >= 30
-            """
+        res = (
+            supabase.table("solicitudes")
+            .select("folio")
+            .eq("estatus", "CAPTURADA")
+            .lt("fecha", hace_30_dias)
+            .execute()
         )
 
-        registros = cur.rowcount
-        conn.commit()
-        return registros
-        
-    finally:
-        conn.close()
+        solicitudes_vencidas = res.data
+        if not solicitudes_vencidas:
+            return 0
+
+        folios = [s["folio"] for s in solicitudes_vencidas]
+
+        supabase.table("solicitudes").update({
+            "estatus": "CANCELADA",
+            "comentarios_admin": "Cierre automático por antigüedad"
+        }).in_("folio", folios).execute()
+
+        return len(folios)
+
+    except Exception as e:
+        print(f"Error cerrando solicitudes en Supabase: {e}")
+        return 0
