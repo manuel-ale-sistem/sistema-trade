@@ -37,9 +37,3 @@ def login(usuario, password):
         return None
 
     return None
-            registrar_acceso(usuario, "LOGIN")
-            return datos
-    except Exception:
-        return None
-
-    return None
