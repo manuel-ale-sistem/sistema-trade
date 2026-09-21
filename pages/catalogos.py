@@ -4,7 +4,7 @@ import uuid
 import streamlit as st
 import pandas as pd
 
-from database import get_connection
+from supabase_config import supabase
 
 CARPETA_IMAGENES = "catalogos_img"
 CARPETA_PDF = "catalogos_pdf"
@@ -141,26 +141,18 @@ def catalogos():
                         pdf_modelo.getbuffer()
                     )
 
-            cur.execute(
-                """
-                INSERT INTO catalogos(
-                    tipo,
-                    valor,
-                    imagen_path,
-                    pdf_path
-                )
-                VALUES(?,?,?,?)
-                """,
-                (
-                    tipo,
-                    valor.strip(),
-                    imagen_path,
-                    pdf_path
-                )
-            )
-
-            conn.commit()
-            conn.close()
+            supabase.table(
+    "catalogos"
+).insert(
+    {
+        "tipo": tipo,
+        "valor": valor.strip(),
+        "imagen_path": imagen_path,
+        "pdf_path": pdf_path,
+        "activo": 1,
+        "eliminado": 0
+    }
+).execute()
 
             st.success(
                 "Catálogo guardado correctamente"
