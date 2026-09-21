@@ -2,22 +2,32 @@ import streamlit as st
 from utils.styles import aplicar_estilos_globales
 import bcrypt
 from supabase_config import supabase
-if st.button("Reset Password Admin"):
+import bcrypt
+import streamlit as st
+from supabase_config import supabase
+
+if st.button("Generar Password Admin"):
+
+    password = "Trade2026*"
 
     nuevo_hash = bcrypt.hashpw(
-        "Trade2026*".encode("utf-8"),
+        password.encode("utf-8"),
         bcrypt.gensalt()
     ).decode("utf-8")
 
+    st.code(nuevo_hash)
+
     resultado = (
         supabase.table("usuarios")
-        .update({"password": nuevo_hash})
+        .update(
+            {"password": nuevo_hash}
+        )
         .eq("usuario", "admin")
         .execute()
     )
 
+    st.success("Hash actualizado")
     st.write(resultado)
-    st.success("Contraseña actualizada a Trade2026*")
 from database import (
     create_tables,
     crear_admin,
