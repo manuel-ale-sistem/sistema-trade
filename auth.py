@@ -1,4 +1,5 @@
 import bcrypt
+import streamlit as st
 from supabase_config import supabase
 from services.accesos_service import registrar_acceso
 
@@ -13,35 +14,40 @@ def verificar_password(password, password_hash):
 def login(usuario, password):
 
     try:
+
         response = (
             supabase.table("usuarios")
             .select("*")
             .eq("usuario", usuario)
-            .eq("activo", 1)
             .execute()
         )
+
+        st.write("DEBUG RESPONSE:", response.data)
 
         datos = response.data
 
         if not datos:
+            st.error("Usuario no encontrado")
             return None
 
         usuario_db = datos[0]
+
+        st.write("DEBUG HASH:", usuario_db["password"])
+        st.write("DEBUG ACTIVO:", usuario_db["activo"])
 
         resultado = verificar_password(
             password,
             usuario_db["password"]
         )
 
+        st.write("DEBUG PASSWORD OK:", resultado)
+
         if resultado:
-            registrar_acceso(
-                usuario,
-                "LOGIN"
-            )
+            registrar_acceso(usuario, "LOGIN")
             return usuario_db
 
         return None
 
     except Exception as e:
-        print(f"Error login: {e}")
+        st.error(f"ERROR LOGIN: {e}")
         return None
