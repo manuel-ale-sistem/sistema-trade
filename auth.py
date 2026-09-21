@@ -4,7 +4,6 @@ from services.accesos_service import registrar_acceso
 
 
 def verificar_password(password, password_hash):
-    """Verifica si la contraseña coincide con el hash almacenado."""
     return bcrypt.checkpw(
         password.encode("utf-8"),
         password_hash.encode("utf-8")
@@ -12,8 +11,9 @@ def verificar_password(password, password_hash):
 
 
 def login(usuario, password):
-    """Valida las credenciales del usuario en Supabase y registra el acceso."""
+
     try:
+
         response = (
             supabase.table("usuarios")
             .select("*")
@@ -22,18 +22,38 @@ def login(usuario, password):
             .execute()
         )
 
+        print("RESPONSE:", response.data)
+
         datos = response.data
+
         if not datos:
+            print("❌ Usuario no encontrado")
             return None
 
         usuario_db = datos[0]
 
-        if verificar_password(password, usuario_db["password"]):
-            registrar_acceso(usuario, "LOGIN")
+        print("✅ Usuario encontrado:", usuario_db["usuario"])
+        print("✅ Hash:", usuario_db["password"])
+
+        resultado = verificar_password(
+            password,
+            usuario_db["password"]
+        )
+
+        print("✅ Resultado bcrypt:", resultado)
+
+        if resultado:
+
+            registrar_acceso(
+                usuario,
+                "LOGIN"
+            )
+
             return usuario_db
 
+        print("❌ Contraseña incorrecta")
+
     except Exception as e:
-        print(f"Error en login con Supabase: {e}")
-        return None
+        print("ERROR LOGIN:", e)
 
     return None
