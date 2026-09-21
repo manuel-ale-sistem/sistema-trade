@@ -1,13 +1,10 @@
-from supabase import create_client
-import streamlit as st
+import os
+from supabase import create_client, Client
 
-print(st.secrets["SUPABASE_URL"])
-print(st.secrets["SUPABASE_KEY"][:20])
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("⚠️ Faltan las credenciales de Supabase en las variables de entorno.")
 
-supabase = create_client(
-    SUPABASE_URL,
-    SUPABASE_KEY
-)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
