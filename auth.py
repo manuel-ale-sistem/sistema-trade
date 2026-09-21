@@ -1,12 +1,7 @@
 import bcrypt
-
-from database import get_connection
+from supabase_config import supabase
 from services.accesos_service import registrar_acceso
 
-
-# ==========================================
-# VERIFICAR PASSWORD
-# ==========================================
 
 def verificar_password(password, password_hash):
     """Verifica si la contraseña coincide con el hash almacenado."""
@@ -16,35 +11,32 @@ def verificar_password(password, password_hash):
     )
 
 
-# ==========================================
-# LOGIN
-# ==========================================
-
 def login(usuario, password):
-    """Valida las credenciales del usuario y registra el acceso si son correctas."""
-    conn = get_connection()
-    cur = conn.cursor()
+    """Valida las credenciales del usuario en Supabase y registra el acceso."""
+    try:
+        response = (
+            supabase.table("usuarios")
+            .select("*")
+            .eq("usuario", usuario)
+            .eq("activo", 1)
+            .execute()
+        )
 
-    cur.execute(
-        """
-        SELECT *
-        FROM usuarios
-        WHERE usuario = ?
-        AND activo = 1
-        """,
-        (usuario,)
-    )
+        datos = response.data
+        if not datos:
+            return None
 
-    datos = cur.fetchone()
-    conn.close()
+        usuario_db = datos[0]
 
-    if not datos:
+        if verificar_password(password, usuario_db["password"]):
+            registrar_acceso(usuario, "LOGIN")
+            return usuario_db
+
+    except Exception as e:
+        print(f"Error en login con Supabase: {e}")
         return None
 
-    try:
-        # Nota: 'datos' debe permitir acceso por clave (ej. diccionario) 
-        # asegurando que get_connection() tenga configured row_factory.
-        if verificar_password(password, datos["password"]):
+    return None
             registrar_acceso(usuario, "LOGIN")
             return datos
     except Exception:
