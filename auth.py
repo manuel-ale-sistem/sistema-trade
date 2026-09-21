@@ -8,8 +8,7 @@ response = (
     .execute()
 )
 
-st.write("TOD*S:", response.data)
-
+st.write("TODOS LOS USUARIOS:", response.data)
 def verificar_password(password, password_hash):
     return bcrypt.checkpw(
         password.encode("utf-8"),
