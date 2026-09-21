@@ -81,9 +81,6 @@ def catalogos():
                 )
                 return
 
-            conn = get_connection()
-            cur = conn.cursor()
-
             imagen_path = ""
             pdf_path = ""
 
@@ -142,17 +139,17 @@ def catalogos():
                     )
 
             supabase.table(
-    "catalogos"
-).insert(
-    {
-        "tipo": tipo,
-        "valor": valor.strip(),
-        "imagen_path": imagen_path,
-        "pdf_path": pdf_path,
-        "activo": 1,
-        "eliminado": 0
-    }
-).execute()
+                "catalogos"
+            ).insert(
+                {
+                    "tipo": tipo,
+                    "valor": valor.strip(),
+                    "imagen_path": imagen_path,
+                    "pdf_path": pdf_path,
+                    "activo": 1,
+                    "eliminado": 0
+                }
+            ).execute()
 
             st.success(
                 "Catálogo guardado correctamente"
@@ -171,28 +168,28 @@ def catalogos():
             "Mostrar eliminados"
         )
 
-        conn = get_connection()
-
         if mostrar_eliminados:
-            consulta = """
-            SELECT *
-            FROM catalogos
-            ORDER BY tipo, valor
-            """
+
+            response = (
+                supabase
+                .table("catalogos")
+                .select("*")
+                .order("tipo")
+                .execute()
+            )
+
         else:
-            consulta = """
-            SELECT *
-            FROM catalogos
-            WHERE eliminado=0
-            ORDER BY tipo, valor
-            """
 
-        df = pd.read_sql(
-            consulta,
-            conn
-        )
+            response = (
+                supabase
+                .table("catalogos")
+                .select("*")
+                .eq("eliminado", 0)
+                .order("tipo")
+                .execute()
+            )
 
-        conn.close()
+        df = pd.DataFrame(response.data)
 
         if df.empty:
             st.warning(
@@ -273,20 +270,16 @@ def catalogos():
                 if st.button(
                     "✅ Activar"
                 ):
-                    conn = get_connection()
-                    cur = conn.cursor()
-
-                    cur.execute(
-                        """
-                        UPDATE catalogos
-                        SET activo=1
-                        WHERE id=?
-                        """,
-                        (registro,)
-                    )
-
-                    conn.commit()
-                    conn.close()
+                    supabase.table(
+                        "catalogos"
+                    ).update(
+                        {
+                            "activo": 1
+                        }
+                    ).eq(
+                        "id",
+                        registro
+                    ).execute()
 
                     st.success(
                         "Registro activado"
@@ -301,20 +294,16 @@ def catalogos():
                 if st.button(
                     "⛔ Desactivar"
                 ):
-                    conn = get_connection()
-                    cur = conn.cursor()
-
-                    cur.execute(
-                        """
-                        UPDATE catalogos
-                        SET activo=0
-                        WHERE id=?
-                        """,
-                        (registro,)
-                    )
-
-                    conn.commit()
-                    conn.close()
+                    supabase.table(
+                        "catalogos"
+                    ).update(
+                        {
+                            "activo": 0
+                        }
+                    ).eq(
+                        "id",
+                        registro
+                    ).execute()
 
                     st.success(
                         "Registro desactivado"
@@ -341,20 +330,16 @@ def catalogos():
                 if st.button(
                     "♻️ Restaurar"
                 ):
-                    conn = get_connection()
-                    cur = conn.cursor()
-
-                    cur.execute(
-                        """
-                        UPDATE catalogos
-                        SET eliminado=0
-                        WHERE id=?
-                        """,
-                        (registro,)
-                    )
-
-                    conn.commit()
-                    conn.close()
+                    supabase.table(
+                        "catalogos"
+                    ).update(
+                        {
+                            "eliminado": 0
+                        }
+                    ).eq(
+                        "id",
+                        registro
+                    ).execute()
 
                     st.success(
                         "Registro restaurado"
@@ -379,20 +364,16 @@ def catalogos():
                     if st.button(
                         "CONFIRMAR"
                     ):
-                        conn = get_connection()
-                        cur = conn.cursor()
-
-                        cur.execute(
-                            """
-                            UPDATE catalogos
-                            SET eliminado=1
-                            WHERE id=?
-                            """,
-                            (registro,)
-                        )
-
-                        conn.commit()
-                        conn.close()
+                        supabase.table(
+                            "catalogos"
+                        ).update(
+                            {
+                                "eliminado": 1
+                            }
+                        ).eq(
+                            "id",
+                            registro
+                        ).execute()
 
                         st.session_state.pop(
                             "confirmar_catalogo",
@@ -420,65 +401,40 @@ def catalogos():
 
             st.divider()
 
-            conn = get_connection()
+            todos = (
+                supabase.table("catalogos")
+                .select("*")
+                .execute()
+            ).data
 
-            total = pd.read_sql(
-                """
-                SELECT COUNT(*) total
-                FROM catalogos
-                """,
-                conn
+            total = len(todos)
+
+            activos = len(
+                [
+                    x for x in todos
+                    if x["activo"] == 1
+                    and x["eliminado"] == 0
+                ]
             )
 
-            activos = pd.read_sql(
-                """
-                SELECT COUNT(*) total
-                FROM catalogos
-                WHERE activo=1
-                AND eliminado=0
-                """,
-                conn
+            inactivos = len(
+                [
+                    x for x in todos
+                    if x["activo"] == 0
+                    and x["eliminado"] == 0
+                ]
             )
 
-            inactivos = pd.read_sql(
-                """
-                SELECT COUNT(*) total
-                FROM catalogos
-                WHERE activo=0
-                AND eliminado=0
-                """,
-                conn
+            eliminados = len(
+                [
+                    x for x in todos
+                    if x["eliminado"] == 1
+                ]
             )
-
-            eliminados = pd.read_sql(
-                """
-                SELECT COUNT(*) total
-                FROM catalogos
-                WHERE eliminado=1
-                """,
-                conn
-            )
-
-            conn.close()
 
             c1, c2, c3, c4 = st.columns(4)
 
-            c1.metric(
-                "Total",
-                int(total["total"][0])
-            )
-
-            c2.metric(
-                "Activos",
-                int(activos["total"][0])
-            )
-
-            c3.metric(
-                "Inactivos",
-                int(inactivos["total"][0])
-            )
-
-            c4.metric(
-                "Eliminados",
-                int(eliminados["total"][0])
-            )
+            c1.metric("Total", total)
+            c2.metric("Activos", activos)
+            c3.metric("Inactivos", inactivos)
+            c4.metric("Eliminados", eliminados)
