@@ -2,7 +2,7 @@ import os
 import streamlit as st
 import pandas as pd
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 from utils.excel import exportar_excel
 
 UPLOAD_FOLDER = "uploads"
@@ -12,21 +12,21 @@ def consultas() -> None:
     """Muestra la interfaz de consulta, filtrado, exportación y detalle de solicitudes."""
     st.subheader("Consulta de Solicitudes")
 
-    conn = get_connection()
+    # ==========================================
+    # CARGAR SOLICITUDES DESDE SUPABASE
+    # ==========================================
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitudes
-            ORDER BY id DESC
-            """,
-            conn,
+        response = (
+            supabase
+            .table("solicitudes")
+            .select("*")
+            .order("id", desc=True)
+            .execute()
         )
+        df = pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Error al cargar las solicitudes: {e}")
         df = pd.DataFrame()
-    finally:
-        conn.close()
 
     if df.empty:
         st.warning("No existen registros")
@@ -71,25 +71,21 @@ def consultas() -> None:
     st.dataframe(detalle, use_container_width=True)
 
     # ==========================================
-    # DETALLE DE REQUERIMIENTOS (Tarjetas / Containers)
+    # DETALLE DE REQUERIMIENTOS (SUPABASE)
     # ==========================================
-    conn = get_connection()
     try:
-        detalle_req = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitud_detalle
-            WHERE folio = ?
-            ORDER BY id
-            """,
-            conn,
-            params=[folio]
+        response_req = (
+            supabase
+            .table("solicitud_detalle")
+            .select("*")
+            .eq("folio", folio)
+            .order("id")
+            .execute()
         )
+        detalle_req = pd.DataFrame(response_req.data)
     except Exception as e:
         st.error(f"Error al cargar los requerimientos: {e}")
         detalle_req = pd.DataFrame()
-    finally:
-        conn.close()
 
     st.write("### 📋 Requerimientos")
 
@@ -138,24 +134,20 @@ def consultas() -> None:
         )
 
     # ==========================================
-    # EVIDENCIAS
+    # EVIDENCIAS (SUPABASE)
     # ==========================================
-    conn = get_connection()
     try:
-        docs = pd.read_sql(
-            """
-            SELECT *
-            FROM documentos
-            WHERE folio = ?
-            """,
-            conn,
-            params=(folio,)
+        response_docs = (
+            supabase
+            .table("documentos")
+            .select("*")
+            .eq("folio", folio)
+            .execute()
         )
+        docs = pd.DataFrame(response_docs.data)
     except Exception as e:
         st.error(f"Error al cargar las evidencias: {e}")
         docs = pd.DataFrame()
-    finally:
-        conn.close()
 
     st.write("### Evidencias")
 
