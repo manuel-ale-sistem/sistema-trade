@@ -1,27 +1,31 @@
 import streamlit as st
 import pandas as pd
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 
 
 def dashboard() -> None:
     """Muestra el dashboard ejecutivo con métricas de desempeño y gráficos de solicitudes."""
     st.subheader("Dashboard Ejecutivo")
 
-    conn = get_connection()
+    # ==========================================
+    # CARGAR SOLICITUDES DESDE SUPABASE
+    # ==========================================
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitudes
-            """,
-            conn
+        response = (
+            supabase
+            .table("solicitudes")
+            .select("*")
+            .execute()
         )
+
+        df = pd.DataFrame(response.data)
+
     except Exception as e:
-        st.error(f"Error al cargar los datos del dashboard: {e}")
+        st.error(
+            f"Error al cargar los datos del dashboard: {e}"
+        )
         df = pd.DataFrame()
-    finally:
-        conn.close()
 
     if df.empty:
         st.warning("No existen registros")
@@ -34,11 +38,19 @@ def dashboard() -> None:
     ) if "estatus" in df.columns else 0
 
     productivas = len(
-        df[df["resultado"] == "PRODUCTIVO"]
+        df[
+            df["resultado"]
+            .fillna("")
+            .eq("PRODUCTIVO")
+        ]
     ) if "resultado" in df.columns else 0
 
     improductivas = len(
-        df[df["resultado"] == "IMPRODUCTIVO"]
+        df[
+            df["resultado"]
+            .fillna("")
+            .eq("IMPRODUCTIVO")
+        ]
     ) if "resultado" in df.columns else 0
 
     efectividad = 0
@@ -58,26 +70,47 @@ def dashboard() -> None:
     # ==========================================
     # MODELOS MÁS SOLICITADOS
     # ==========================================
-    conn = get_connection()
     try:
-        modelos = pd.read_sql(
-            """
-            SELECT
-                modelo,
-                SUM(cantidad) total
-            FROM solicitud_detalle
-            WHERE modelo IS NOT NULL
-            AND modelo <> ''
-            GROUP BY modelo
-            ORDER BY total DESC
-            """,
-            conn
+        response = (
+            supabase
+            .table("solicitud_detalle")
+            .select(
+                "modelo,cantidad"
+            )
+            .execute()
         )
+
+        detalle = pd.DataFrame(
+            response.data
+        )
+
+        if not detalle.empty:
+            detalle = detalle[
+                detalle["modelo"].notna()
+            ]
+
+            detalle = detalle[
+                detalle["modelo"] != ""
+            ]
+
+            modelos = (
+                detalle
+                .groupby("modelo")["cantidad"]
+                .sum()
+                .reset_index(name="total")
+                .sort_values(
+                    "total",
+                    ascending=False
+                )
+            )
+        else:
+            modelos = pd.DataFrame()
+
     except Exception as e:
-        st.error(f"Error al cargar los modelos solicitados: {e}")
+        st.error(
+            f"Error al cargar modelos: {e}"
+        )
         modelos = pd.DataFrame()
-    finally:
-        conn.close()
 
     if not modelos.empty:
         st.write("### 🧊 Modelos Más Solicitados")
@@ -86,26 +119,39 @@ def dashboard() -> None:
         )
 
     # ==========================================
-    # SOLICITUDES POR CATEGORÍA (Dashboard Categorías)
+    # SOLICITUDES POR CATEGORÍA
     # ==========================================
-    conn = get_connection()
     try:
-        categorias = pd.read_sql(
-            """
-            SELECT
-                categoria,
-                COUNT(*) total
-            FROM solicitud_detalle
-            GROUP BY categoria
-            ORDER BY total DESC
-            """,
-            conn
+        response = (
+            supabase
+            .table("solicitud_detalle")
+            .select("categoria")
+            .execute()
         )
+
+        detalle_cat = pd.DataFrame(
+            response.data
+        )
+
+        if not detalle_cat.empty:
+            categorias = (
+                detalle_cat
+                .groupby("categoria")
+                .size()
+                .reset_index(name="total")
+                .sort_values(
+                    "total",
+                    ascending=False
+                )
+            )
+        else:
+            categorias = pd.DataFrame()
+
     except Exception as e:
-        st.error(f"Error al cargar las solicitudes por categoría: {e}")
+        st.error(
+            f"Error al cargar categorías: {e}"
+        )
         categorias = pd.DataFrame()
-    finally:
-        conn.close()
 
     if not categorias.empty:
         st.write("### 📊 Solicitudes por Categoría")
