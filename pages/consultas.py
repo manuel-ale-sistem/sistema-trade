@@ -35,14 +35,16 @@ def consultas() -> None:
     buscar = st.text_input("Buscar Folio")
 
     if buscar:
-        df = df[
+        mascara = (
             df["folio"]
+            .astype(str)
             .str.contains(
                 buscar,
                 case=False,
                 na=False
             )
-        ]
+        )
+        df = df[mascara]
 
     st.write(f"Registros encontrados: {len(df)}")
     st.dataframe(df, use_container_width=True)
@@ -60,9 +62,16 @@ def consultas() -> None:
 
     st.divider()
 
+    # ==========================================
+    # SELECCIÓN DE FOLIO ROBUSTA
+    # ==========================================
+    if "folio" not in df.columns:
+        st.error("La columna folio no existe.")
+        return
+
     folio = st.selectbox(
         "Seleccione Folio",
-        df["folio"].tolist()
+        sorted(df["folio"].dropna().unique().tolist())
     )
 
     detalle = df[df["folio"] == folio]
@@ -79,7 +88,10 @@ def consultas() -> None:
             .table("solicitud_detalle")
             .select("*")
             .eq("folio", folio)
-            .order("id")
+            .order(
+                "fecha_registro",
+                desc=False
+            )
             .execute()
         )
         detalle_req = pd.DataFrame(response_req.data)
@@ -102,22 +114,22 @@ def consultas() -> None:
                     f"**Categoría:** {req['categoria']}"
                 )
 
-                if req.get("modelo"):
+                if pd.notna(req.get("modelo")) and req.get("modelo") != "":
                     st.write(
                         f"**Modelo:** {req['modelo']}"
                     )
 
-                if req.get("cantidad"):
+                if pd.notna(req.get("cantidad")):
                     st.write(
                         f"**Cantidad:** {req['cantidad']}"
                     )
 
-                if req.get("serie"):
+                if pd.notna(req.get("serie")) and req.get("serie") != "":
                     st.write(
                         f"**Serie:** {req['serie']}"
                     )
 
-                if req.get("comentarios"):
+                if pd.notna(req.get("comentarios")) and req.get("comentarios") != "":
                     st.info(
                         req["comentarios"]
                     )
