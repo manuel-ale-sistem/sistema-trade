@@ -5,13 +5,13 @@ import re
 
 import streamlit as st
 import pandas as pd
-
+from supabase_config import supabase
 from pathlib import Path
 from datetime import datetime
 from pypdf import PdfReader
 
+# Removido: from database import get_connection (Se mantiene el resto si se utiliza en otras partes)
 from database import (
-    get_connection,
     guardar_especificaciones,
     guardar_detalle_solicitud
 )
@@ -82,80 +82,67 @@ SOLICITUDES_CON_MODELO = [
 
 @st.cache_data
 def obtener_catalogo(tipo):
-    conn = get_connection()
-    cur = conn.cursor()
 
-    cur.execute(
-        """
-        SELECT valor
-        FROM catalogos
-        WHERE tipo=?
-        AND activo=1
-        ORDER BY valor
-        """,
-        (tipo,)
+    response = (
+        supabase
+        .table("catalogos")
+        .select("valor")
+        .eq("tipo", tipo)
+        .eq("activo", 1)
+        .eq("eliminado", 0)
+        .order("valor")
+        .execute()
     )
-
-    datos = cur.fetchall()
-    conn.close()
 
     return [
         row["valor"]
-        for row in datos
+        for row in response.data
     ]
 
 
 @st.cache_data
 def obtener_modelos():
-    conn = get_connection()
 
-    consulta = """
-    SELECT
-        id,
-        valor,
-        imagen_path,
-        pdf_path
-    FROM catalogos
-    WHERE tipo='MODELO'
-    AND activo=1
-    AND eliminado=0
-    ORDER BY valor
-    """
-
-    df = pd.read_sql(
-        consulta,
-        conn
+    response = (
+        supabase
+        .table("catalogos")
+        .select(
+            "id,valor,imagen_path,pdf_path"
+        )
+        .eq("tipo", "MODELO")
+        .eq("activo", 1)
+        .eq("eliminado", 0)
+        .order("valor")
+        .execute()
     )
 
-    conn.close()
-
-    return df
+    return pd.DataFrame(
+        response.data
+    )
 
 
 # ==========================================
-# OBTENER ESPECIFICACIONES DESDE SQLITE
+# OBTENER ESPECIFICACIONES DESDE SUPABASE
 # ==========================================
 
 def obtener_especificaciones(
     catalogo_id
 ):
-    conn = get_connection()
 
-    consulta = """
-    SELECT *
-    FROM modelos_detalle
-    WHERE catalogo_id = ?
-    """
-
-    df = pd.read_sql(
-        consulta,
-        conn,
-        params=[catalogo_id]
+    response = (
+        supabase
+        .table("modelos_detalle")
+        .select("*")
+        .eq(
+            "catalogo_id",
+            catalogo_id
+        )
+        .execute()
     )
 
-    conn.close()
-
-    return df
+    return pd.DataFrame(
+        response.data
+    )
 
 
 # ==========================================
@@ -229,7 +216,6 @@ def captura_form():
         "Nueva Solicitud Trade"
     )
 
-    # 💡 Indicador permanente en la parte superior si se guardó una solicitud recientemente
     if "ultimo_folio_registrado" in st.session_state and st.session_state.ultimo_folio_registrado:
         st.success(f"🎉 Última solicitud registrada exitosamente con el folio: **{st.session_state.ultimo_folio_registrado}**")
 
@@ -662,7 +648,10 @@ def captura_form():
             return
 
         try:
-
+            # Nota: Si el guardado principal de solicitudes migra por completo a Supabase, 
+            # puedes adaptar esta sección de inserción utilizando supabase.table("solicitudes").insert({...}).execute()
+            # Dejamos la estructura original si la función get_connection sigue operando para transacciones complejas.
+            from database import get_connection
             conn = get_connection()
             cur = conn.cursor()
 
@@ -828,7 +817,6 @@ def captura_form():
 
             st.session_state.requerimientos = []
 
-            # 💡 Guardamos el folio en la sesión para que aparezca arriba de inmediato
             st.session_state.ultimo_folio_registrado = folio
 
             st.balloons()
