@@ -48,7 +48,17 @@ def reportes() -> None:
 
     # Métricas y Gráficos
     total = len(df)
-    productivas = len(df[df["resultado"] == "PRODUCTIVO"]) if "resultado" in df.columns else 0
+    
+    # Cálculo robusto de productivas (insensible a mayúsculas/minúsculas y nulos)
+    productivas = len(
+        df[
+            df["resultado"]
+            .fillna("")
+            .str.upper()
+            .eq("PRODUCTIVO")
+        ]
+    ) if "resultado" in df.columns else 0
+
     efectividad = round((productivas / total) * 100, 2) if total > 0 else 0
 
     c1, c2 = st.columns(2)
