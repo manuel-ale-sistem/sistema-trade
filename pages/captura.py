@@ -29,11 +29,8 @@ from services.historial_service import (
     guardar_historial
 )
 
-UPLOAD_FOLDER = "uploads"
-
-os.makedirs(
-    UPLOAD_FOLDER,
-    exist_ok=True
+from services.storage_service import (
+    subir_archivo
 )
 
 SOLICITUDES = {
@@ -728,20 +725,27 @@ def captura_form():
                     capacidad_solicitada=req.get("capacidad_solicitada", "")
                 )
 
-            # Insertar documentos / evidencias
+            # Insertar documentos / evidencias usando Supabase Storage
             if documentos:
                 for archivo in documentos:
-                    extension = Path(archivo.name).suffix
-                    nombre_archivo = f"{folio}_{uuid.uuid4().hex}{extension}"
-                    ruta_archivo = os.path.join(UPLOAD_FOLDER, nombre_archivo)
+                    resultado = subir_archivo(
+                        archivo,
+                        "evidencias"
+                    )
 
-                    with open(ruta_archivo, "wb") as file:
-                        file.write(archivo.getbuffer())
+                    nombre_archivo = resultado[
+                        "archivo"
+                    ]
+
+                    url = resultado[
+                        "url"
+                    ]
 
                     supabase.table("documentos").insert(
                         {
                             "folio": folio,
-                            "archivo": nombre_archivo
+                            "archivo": nombre_archivo,
+                            "url": url
                         }
                     ).execute()
 
@@ -757,11 +761,6 @@ def captura_form():
 
             st.balloons()
             st.rerun()
-
-        except Exception as e:
-            st.error(
-                f"Error: {e}"
-            )
 
         except Exception as e:
             st.error(
