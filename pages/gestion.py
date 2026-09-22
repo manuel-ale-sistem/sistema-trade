@@ -1,60 +1,79 @@
+import os
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 from services.historial_service import guardar_historial
 
 
-def actualizar_estatus(folio: str, estatus: str) -> None:
+def actualizar_estatus(
+    folio: str,
+    estatus: str
+) -> None:
     """Actualiza rápidamente el estatus de una solicitud y registra el cambio en el historial."""
-    conn = get_connection()
     try:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            UPDATE solicitudes
-            SET estatus = ?
-            WHERE folio = ?
-            """,
-            (estatus, folio)
+        (
+            supabase
+            .table("solicitudes")
+            .update(
+                {
+                    "estatus": estatus
+                }
+            )
+            .eq("folio", folio)
+            .execute()
         )
-        conn.commit()
 
         guardar_historial(
             folio,
-            st.session_state.get("usuario", "sistema"),
+            st.session_state.get(
+                "usuario",
+                "sistema"
+            ),
             f"Cambio rápido a {estatus}"
         )
 
-        st.success(f"Estatus actualizado a {estatus}")
+        st.success(
+            f"Estatus actualizado a {estatus}"
+        )
+
         st.rerun()
+
     except Exception as e:
-        conn.rollback()
-        st.error(f"Error al actualizar el estatus: {e}")
-    finally:
-        conn.close()
+        st.error(
+            f"Error al actualizar el estatus: {e}"
+        )
 
 
 def gestionar() -> None:
     """Muestra la interfaz de gestión para dar seguimiento y cambiar estatus de solicitudes."""
     st.subheader("Gestión de Solicitudes")
 
-    conn = get_connection()
+    # ==========================================
+    # CARGAR SOLICITUDES DESDE SUPABASE
+    # ==========================================
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitudes
-            ORDER BY id DESC
-            """,
-            conn
+        response = (
+            supabase
+            .table("solicitudes")
+            .select("*")
+            .order(
+                "id",
+                desc=True
+            )
+            .execute()
         )
+
+        df = pd.DataFrame(
+            response.data
+        )
+
     except Exception as e:
-        st.error(f"Error al cargar las solicitudes: {e}")
+        st.error(
+            f"Error al cargar las solicitudes: {e}"
+        )
         df = pd.DataFrame()
-    finally:
-        conn.close()
 
     if df.empty:
         st.warning("No existen solicitudes")
@@ -94,24 +113,31 @@ def gestionar() -> None:
     st.write("### Información")
     st.dataframe(solicitud, use_container_width=True)
 
-    # Cargar detalle de requerimientos
-    conn = get_connection()
+    # ==========================================
+    # CARGAR REQUERIMIENTOS DESDE SUPABASE
+    # ==========================================
     try:
-        detalle_req = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitud_detalle
-            WHERE folio = ?
-            ORDER BY id
-            """,
-            conn,
-            params=[folio]
+        response = (
+            supabase
+            .table("solicitud_detalle")
+            .select("*")
+            .eq(
+                "folio",
+                folio
+            )
+            .order("id")
+            .execute()
         )
+
+        detalle_req = pd.DataFrame(
+            response.data
+        )
+
     except Exception as e:
-        st.error(f"Error al cargar los requerimientos: {e}")
+        st.error(
+            f"Error al cargar los requerimientos: {e}"
+        )
         detalle_req = pd.DataFrame()
-    finally:
-        conn.close()
 
     st.write("### 📋 Requerimientos")
 
@@ -143,56 +169,64 @@ def gestionar() -> None:
             ]
         )
 
-        # Validar existencia de columnas de gestión opcionales
+        # Validar existencia de columnas de gestión opcionales (usando comentarios_adr)
         val_responsable = str(fila["usuario_gestiona"]) if "usuario_gestiona" in df.columns and pd.notna(fila["usuario_gestiona"]) else ""
-        val_comentarios = str(fila["comentarios_admin"]) if "comentarios_admin" in df.columns and pd.notna(fila["comentarios_admin"]) else ""
+        val_comentarios = str(fila["comentarios_adr"]) if "comentarios_adr" in df.columns and pd.notna(fila["comentarios_adr"]) else ""
 
         responsable = st.text_input("Responsable", value=val_responsable)
         comentarios = st.text_area("Comentarios", value=val_comentarios)
 
         if st.button("Guardar Gestión"):
-            fecha_cierre = ""
-            if nuevo_estatus in ["PRODUCTIVA", "IMPRODUCTIVA", "CANCELADA"]:
-                fecha_cierre = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            conn = get_connection()
             try:
-                cur = conn.cursor()
-                cur.execute(
-                    """
-                    UPDATE solicitudes
-                    SET
-                        estatus = ?,
-                        resultado = ?,
-                        comentarios_admin = ?,
-                        usuario_gestiona = ?,
-                        fecha_cierre = ?
-                    WHERE folio = ?
-                    """,
-                    (
-                        nuevo_estatus,
-                        resultado,
-                        comentarios,
-                        responsable,
-                        fecha_cierre,
+                fecha_cierre = ""
+
+                if nuevo_estatus in [
+                    "PRODUCTIVA",
+                    "IMPRODUCTIVA",
+                    "CANCELADA"
+                ]:
+                    fecha_cierre = datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+
+                (
+                    supabase
+                    .table("solicitudes")
+                    .update(
+                        {
+                            "estatus": nuevo_estatus,
+                            "resultado": resultado,
+                            "comentarios_adr": comentarios,
+                            "usuario_gestiona": responsable,
+                            "fecha_cierre": fecha_cierre
+                        }
+                    )
+                    .eq(
+                        "folio",
                         folio
                     )
+                    .execute()
                 )
-                conn.commit()
 
                 guardar_historial(
                     folio,
-                    st.session_state.get("usuario", "sistema"),
+                    st.session_state.get(
+                        "usuario",
+                        "sistema"
+                    ),
                     f"Cambio de estatus a {nuevo_estatus}"
                 )
 
-                st.success("Gestión actualizada")
+                st.success(
+                    "Gestión actualizada"
+                )
+
                 st.rerun()
+
             except Exception as e:
-                conn.rollback()
-                st.error(f"Error al guardar la gestión: {e}")
-            finally:
-                conn.close()
+                st.error(
+                    f"Error al guardar la gestión: {e}"
+                )
 
     st.divider()
 
