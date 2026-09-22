@@ -5,8 +5,6 @@ from utils.styles import aplicar_estilos_globales
 from supabase_config import supabase
 from utils.excel import exportar_excel
 
-UPLOAD_FOLDER = "uploads"
-
 
 def consultas() -> None:
     """Muestra la interfaz de consulta, filtrado, exportación y detalle de solicitudes."""
@@ -146,7 +144,7 @@ def consultas() -> None:
         )
 
     # ==========================================
-    # EVIDENCIAS (SUPABASE)
+    # EVIDENCIAS (SUPABASE STORAGE)
     # ==========================================
     try:
         response_docs = (
@@ -167,16 +165,13 @@ def consultas() -> None:
         st.info("No existen evidencias")
     else:
         for _, doc in docs.iterrows():
-            archivo = os.path.join(
-                UPLOAD_FOLDER,
-                doc["archivo"]
-            )
+            url_archivo = doc.get("url")
+            nombre_archivo = doc.get("archivo", "Evidencia")
 
-            if os.path.exists(archivo):
-                with open(archivo, "rb") as f:
-                    st.download_button(
-                        label=f"📎 {doc['archivo']}",
-                        data=f.read(),
-                        file_name=doc["archivo"],
-                        key=f"descarga_{doc['id']}"
-                    )
+            if url_archivo:
+                st.link_button(
+                    f"📎 {nombre_archivo}",
+                    url_archivo
+                )
+            else:
+                st.warning(f"La evidencia {nombre_archivo} no cuenta con una URL válida.")
