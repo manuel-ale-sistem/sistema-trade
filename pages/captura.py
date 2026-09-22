@@ -10,10 +10,9 @@ from pathlib import Path
 from datetime import datetime
 from pypdf import PdfReader
 
-# Removido: from database import get_connection (Se mantiene el resto si se utiliza en otras partes)
+# Funciones de guardado migradas a Supabase
 from database import (
-    guardar_especificaciones,
-    guardar_detalle_solicitud
+    guardar_especificaciones
 )
 
 from utils.folios import (
@@ -143,6 +142,43 @@ def obtener_especificaciones(
     return pd.DataFrame(
         response.data
     )
+
+
+# ==========================================
+# GUARDAR DETALLE DE SOLICITUD (SUPABASE)
+# ==========================================
+
+def guardar_detalle_solicitud(
+    folio,
+    categoria,
+    tipo_solicitud,
+    modelo="",
+    cantidad=1,
+    serie="",
+    comentarios="",
+    reporte="",
+    material="",
+    capacidad_actual="",
+    capacidad_solicitada=""
+):
+
+    supabase.table(
+        "solicitud_detalle"
+    ).insert(
+        {
+            "folio": folio,
+            "categoria": categoria,
+            "tipo_solicitud": tipo_solicitud,
+            "modelo": modelo,
+            "cantidad": cantidad,
+            "serie": serie,
+            "comentarios": comentarios,
+            "reporte": reporte,
+            "material": material,
+            "capacidad_actual": capacidad_actual,
+            "capacidad_solicitada": capacidad_solicitada
+        }
+    ).execute()
 
 
 # ==========================================
@@ -648,180 +684,84 @@ def captura_form():
             return
 
         try:
-            # Nota: Si el guardado principal de solicitudes migra por completo a Supabase, 
-            # puedes adaptar esta sección de inserción utilizando supabase.table("solicitudes").insert({...}).execute()
-            # Dejamos la estructura original si la función get_connection sigue operando para transacciones complejas.
-            from database import get_connection
-            conn = get_connection()
-            cur = conn.cursor()
-
             folio = generar_folio()
 
-            cur.execute(
-                """
-                INSERT INTO solicitudes(
-                    folio,
-                    fecha,
-                    jefatura,
-                    ruta,
-                    asesor,
-                    canal,
-                    solicitud,
-                    ppa,
-                    sap,
-                    negocio,
-                    telefono,
-                    gec,
-                    modelo,
-                    segmento,
-                    latitud,
-                    longitud,
-                    url_maps,
-                    observaciones,
-                    estatus,
-                    usuario
-                )
-                VALUES(
-                    ?,?,?,?,?,?,?,
-                    ?,?,?,?,?,?,?,
-                    ?,?,?,?,?,?
-                )
-                """,
-                (
-                    folio,
-                    fecha,
-                    jefatura,
-                    ruta,
-                    asesor,
-                    canal,
-                    "MULTIPLE",
-                    ppa,
-                    sap,
-                    negocio,
-                    telefono,
-                    gec,
-                    "",
-                    segmento,
-                    latitud,
-                    longitud,
-                    url_maps,
-                    observaciones,
-                    "CAPTURADA",
-                    st.session_state[
-                        "usuario"
-                    ]
-                )
-            )
+            # Insertar solicitud principal en Supabase
+            supabase.table("solicitudes").insert(
+                {
+                    "folio": folio,
+                    "fecha": fecha,
+                    "jefatura": jefatura,
+                    "ruta": ruta,
+                    "asesor": asesor,
+                    "canal": canal,
+                    "solicitud": "MULTIPLE",
+                    "ppa": ppa,
+                    "sap": sap,
+                    "negocio": negocio,
+                    "telefono": telefono,
+                    "gec": gec,
+                    "modelo": "",
+                    "segmento": segmento,
+                    "latitud": latitud,
+                    "longitud": longitud,
+                    "url_maps": url_maps,
+                    "observaciones": observaciones,
+                    "estatus": "CAPTURADA",
+                    "usuario": st.session_state["usuario"]
+                }
+            ).execute()
 
+            # Insertar requerimientos (detalles)
             for req in st.session_state.requerimientos:
-
                 guardar_detalle_solicitud(
-                    cur=cur,
                     folio=folio,
-                    categoria=req.get(
-                        "categoria",
-                        ""
-                    ),
-                    tipo_solicitud=req.get(
-                        "tipo",
-                        ""
-                    ),
-                    modelo=req.get(
-                        "modelo",
-                        ""
-                    ),
-                    cantidad=req.get(
-                        "cantidad",
-                        1
-                    ),
-                    serie=req.get(
-                        "serie",
-                        ""
-                    ),
-                    comentarios=req.get(
-                        "comentarios",
-                        ""
-                    ),
-                    reporte=req.get(
-                        "reporte",
-                        ""
-                    ),
-                    material=req.get(
-                        "material",
-                        ""
-                    ),
-                    capacidad_actual=req.get(
-                        "capacidad_actual",
-                        ""
-                    ),
-                    capacidad_solicitada=req.get(
-                        "capacidad_solicitada",
-                        ""
-                    )
+                    categoria=req.get("categoria", ""),
+                    tipo_solicitud=req.get("tipo", ""),
+                    modelo=req.get("modelo", ""),
+                    cantidad=req.get("cantidad", 1),
+                    serie=req.get("serie", ""),
+                    comentarios=req.get("comentarios", ""),
+                    reporte=req.get("reporte", ""),
+                    material=req.get("material", ""),
+                    capacidad_actual=req.get("capacidad_actual", ""),
+                    capacidad_solicitada=req.get("capacidad_solicitada", "")
                 )
 
+            # Insertar documentos / evidencias
             if documentos:
-
                 for archivo in documentos:
+                    extension = Path(archivo.name).suffix
+                    nombre_archivo = f"{folio}_{uuid.uuid4().hex}{extension}"
+                    ruta_archivo = os.path.join(UPLOAD_FOLDER, nombre_archivo)
 
-                    extension = (
-                        Path(
-                            archivo.name
-                        ).suffix
-                    )
+                    with open(ruta_archivo, "wb") as file:
+                        file.write(archivo.getbuffer())
 
-                    nombre_archivo = (
-                        f"{folio}_"
-                        f"{uuid.uuid4().hex}"
-                        f"{extension}"
-                    )
+                    supabase.table("documentos").insert(
+                        {
+                            "folio": folio,
+                            "archivo": nombre_archivo
+                        }
+                    ).execute()
 
-                    ruta_archivo = os.path.join(
-                        UPLOAD_FOLDER,
-                        nombre_archivo
-                    )
-
-                    with open(
-                        ruta_archivo,
-                        "wb"
-                    ) as file:
-
-                        file.write(
-                            archivo.getbuffer()
-                        )
-
-                    cur.execute(
-                        """
-                        INSERT INTO documentos(
-                            folio,
-                            archivo
-                        )
-                        VALUES(?,?)
-                        """,
-                        (
-                            folio,
-                            nombre_archivo
-                        )
-                    )
-
-            conn.commit()
-            conn.close()
-
+            # Guardar en el historial de acciones
             guardar_historial(
                 folio,
-                st.session_state[
-                    "usuario"
-                ],
+                st.session_state["usuario"],
                 "CREACION SOLICITUD"
             )
 
             st.session_state.requerimientos = []
-
             st.session_state.ultimo_folio_registrado = folio
 
             st.balloons()
             st.rerun()
 
+        except Exception as e:
+            st.error(
+                f"Error: {e}"
+            )
         except Exception as e:
 
             st.error(
