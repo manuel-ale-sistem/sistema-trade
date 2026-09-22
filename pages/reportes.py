@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 from utils.excel import exportar_excel
 from utils.pdf import generar_pdf_solicitud  # <--- Importamos la función que creamos
 
@@ -10,21 +10,20 @@ def reportes() -> None:
     """Muestra la interfaz de reportes gerenciales con filtros, gráficos y descarga en PDF."""
     st.subheader("Reportes Gerenciales")
 
-    conn = get_connection()
+    # ==========================================
+    # CARGAR SOLICITUDES DESDE SUPABASE
+    # ==========================================
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM solicitudes
-            ORDER BY id DESC
-            """,
-            conn
+        response = (
+            supabase
+            .table("solicitudes")
+            .select("*")
+            .execute()
         )
+        df = pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Error al cargar los datos de reportes: {e}")
         df = pd.DataFrame()
-    finally:
-        conn.close()
 
     if df.empty:
         st.warning("No existen registros")
@@ -109,25 +108,21 @@ def reportes() -> None:
                     # Obtenemos los datos de la fila seleccionada
                     fila_solicitud = df_atendidas[df_atendidas["folio"] == folio_seleccionado].iloc[0].to_dict()
                     
-                    # Consultamos y agregamos el detalle de requerimientos a la solicitud para el PDF
-                    conn = get_connection()
+                    # Consultamos y agregamos el detalle de requerimientos a la solicitud para el PDF mediante Supabase
                     try:
-                        detalle_req = pd.read_sql(
-                            """
-                            SELECT *
-                            FROM solicitud_detalle
-                            WHERE folio = ?
-                            ORDER BY id
-                            """,
-                            conn,
-                            params=[folio_seleccionado]
+                        response_req = (
+                            supabase
+                            .table("solicitud_detalle")
+                            .select("*")
+                            .eq("folio", folio_seleccionado)
+                            .order("id")
+                            .execute()
                         )
+                        detalle_req = pd.DataFrame(response_req.data)
                         fila_solicitud["detalle_requerimientos"] = detalle_req.to_dict("records")
                     except Exception as e:
                         st.error(f"Error al cargar los requerimientos para el PDF: {e}")
                         fila_solicitud["detalle_requerimientos"] = []
-                    finally:
-                        conn.close()
                     
                     pdf_bytes = generar_pdf_solicitud(fila_solicitud)
                     
