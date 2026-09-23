@@ -1,28 +1,25 @@
 import streamlit as st
 import pandas as pd
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 
 
 def accesos() -> None:
-    """Muestra la bitácora de accesos del sistema en un componente interactivo de Streamlit."""
+    """Muestra la bitácora de accesos del sistema en un componente interactivo de Streamlit desde Supabase."""
     st.subheader("Bitácora de Accesos")
 
-    conn = get_connection()
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM accesos
-            ORDER BY id DESC
-            """,
-            conn
+        # Consulta a la tabla accesos en Supabase ordenada por id descendente
+        response = (
+            supabase.table("accesos")
+            .select("*")
+            .order("id", desc=True)
+            .execute()
         )
+        df = pd.DataFrame(response.data)
     except Exception as e:
-        st.error(f"Error al cargar la bitácora de accesos: {e}")
-        return
-    finally:
-        conn.close()
+        st.error(f"Error al cargar la bitácora de accesos desde Supabase: {e}")
+        df = pd.DataFrame()
 
     if df.empty:
         st.warning("No existen accesos registrados.")
