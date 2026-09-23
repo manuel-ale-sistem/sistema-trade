@@ -1,29 +1,26 @@
 import streamlit as st
 import pandas as pd
 from utils.styles import aplicar_estilos_globales
-from database import get_connection
+from supabase_config import supabase
 from utils.excel import exportar_excel
 
 
 def historial() -> None:
-    """Muestra la interfaz de consulta del historial de movimientos con filtros y métricas."""
+    """Muestra la interfaz de consulta del historial de movimientos con filtros y métricas desde Supabase."""
     st.subheader("Historial de Movimientos")
 
-    conn = get_connection()
     try:
-        df = pd.read_sql(
-            """
-            SELECT *
-            FROM historial
-            ORDER BY id DESC
-            """,
-            conn
+        # Consulta a la tabla historial en Supabase ordenada por id descendente
+        response = (
+            supabase.table("historial")
+            .select("*")
+            .order("id", desc=True)
+            .execute()
         )
+        df = pd.DataFrame(response.data)
     except Exception as e:
-        st.error(f"Error al cargar el historial: {e}")
+        st.error(f"Error al cargar el historial desde Supabase: {e}")
         df = pd.DataFrame()
-    finally:
-        conn.close()
 
     if df.empty:
         st.warning("No existen movimientos")
