@@ -3,7 +3,7 @@ import uuid
 
 import streamlit as st
 import pandas as pd
-
+from services.storage_service import subir_archivo
 from supabase_config import supabase
 
 CARPETA_IMAGENES = "catalogos_img"
