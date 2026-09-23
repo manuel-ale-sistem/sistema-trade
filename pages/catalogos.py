@@ -1,23 +1,7 @@
-import os
-import uuid
-
 import streamlit as st
 import pandas as pd
 from services.storage_service import subir_archivo
 from supabase_config import supabase
-
-CARPETA_IMAGENES = "catalogos_img"
-CARPETA_PDF = "catalogos_pdf"
-
-os.makedirs(
-    CARPETA_IMAGENES,
-    exist_ok=True
-)
-
-os.makedirs(
-    CARPETA_PDF,
-    exist_ok=True
-)
 
 
 def catalogos():
@@ -84,59 +68,27 @@ def catalogos():
             imagen_path = ""
             pdf_path = ""
 
-            # Imagen
+            # Imagen -> Supabase Storage (trade-files/modelos/imagenes)
             if (
                 tipo == "MODELO"
                 and imagen_modelo is not None
             ):
-
-                extension = (
-                    imagen_modelo.name
-                    .split(".")[-1]
-                    .lower()
+                resultado_img = subir_archivo(
+                    imagen_modelo, "modelos/imagenes"
                 )
+                if resultado_img and "url" in resultado_img:
+                    imagen_path = resultado_img["url"]
 
-                nombre_imagen = (
-                    f"{uuid.uuid4().hex}.{extension}"
-                )
-
-                imagen_path = os.path.join(
-                    CARPETA_IMAGENES,
-                    nombre_imagen
-                )
-
-                with open(
-                    imagen_path,
-                    "wb"
-                ) as f:
-
-                    f.write(
-                        imagen_modelo.getbuffer()
-                    )
-
-            # PDF
+            # PDF -> Supabase Storage (trade-files/modelos/pdf)
             if (
                 tipo == "MODELO"
                 and pdf_modelo is not None
             ):
-
-                nombre_pdf = (
-                    f"{uuid.uuid4().hex}.pdf"
+                resultado_pdf = subir_archivo(
+                    pdf_modelo, "modelos/pdf"
                 )
-
-                pdf_path = os.path.join(
-                    CARPETA_PDF,
-                    nombre_pdf
-                )
-
-                with open(
-                    pdf_path,
-                    "wb"
-                ) as f:
-
-                    f.write(
-                        pdf_modelo.getbuffer()
-                    )
+                if resultado_pdf and "url" in resultado_pdf:
+                    pdf_path = resultado_pdf["url"]
 
             supabase.table(
                 "catalogos"
@@ -152,7 +104,7 @@ def catalogos():
             ).execute()
 
             st.success(
-                "Catálogo guardado correctamente"
+                "Catálogo guardado correctamente en Supabase Storage y Base de Datos"
             )
 
             st.cache_data.clear()
@@ -216,6 +168,7 @@ def catalogos():
 
             if fila["tipo"] == "MODELO":
 
+                # Mostrar Imagen desde URL de Supabase
                 if (
                     pd.notna(
                         fila["imagen_path"]
@@ -232,6 +185,7 @@ def catalogos():
                             "No fue posible mostrar la imagen."
                         )
 
+                # Botón para abrir PDF desde URL de Supabase Storage
                 if (
                     pd.notna(
                         fila["pdf_path"]
@@ -239,20 +193,12 @@ def catalogos():
                     and fila["pdf_path"]
                 ):
                     st.success(
-                        "📄 Ficha Técnica Disponible"
+                        "📄 Ficha Técnica Disponible en la Nube"
                     )
-
-                    with open(
-                        fila["pdf_path"],
-                        "rb"
-                    ) as pdf_file:
-
-                        st.download_button(
-                            "📥 Descargar PDF",
-                            data=pdf_file.read(),
-                            file_name=f"{fila['valor']}.pdf",
-                            mime="application/pdf"
-                        )
+                    st.link_button(
+                        "📥 Ver / Descargar Ficha PDF",
+                        fila["pdf_path"]
+                    )
 
             st.info(
                 f"Tipo: {fila['tipo']} | "
