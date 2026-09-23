@@ -1,336 +1,162 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
+from database import hash_password
+from supabase_config import supabase
 from utils.styles import aplicar_estilos_globales
-from database import (
-    get_connection,
-    hash_password
-)
 
 
-def crear_usuario(
-    usuario,
-    nombre,
-    password,
-    rol
-):
+def crear_usuario(usuario, nombre, password, rol):
 
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        INSERT INTO usuarios(
-
-            usuario,
-            password,
-            nombre,
-            rol
-
-        )
-
-        VALUES(?,?,?,?)
-        """,
-        (
-            usuario,
-            hash_password(password),
-            nombre,
-            rol
-        )
-    )
-
-    conn.commit()
-    conn.close()
+  supabase.table("usuarios").insert({
+      "usuario": usuario,
+      "password": hash_password(password),
+      "nombre": nombre,
+      "rol": rol,
+      "activo": 1,
+  }).execute()
 
 
 def activar_usuario(usuario):
 
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE usuarios
-
-        SET activo=1
-
-        WHERE usuario=?
-        """,
-        (usuario,)
-    )
-
-    conn.commit()
-    conn.close()
+  supabase.table("usuarios").update({"activo": 1}).eq("usuario", usuario).execute()
 
 
 def desactivar_usuario(usuario):
 
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE usuarios
-
-        SET activo=0
-
-        WHERE usuario=?
-        """,
-        (usuario,)
-    )
-
-    conn.commit()
-    conn.close()
+  supabase.table("usuarios").update({"activo": 0}).eq("usuario", usuario).execute()
 
 
-def reset_password(
-    usuario,
-    password
-):
+def reset_password(usuario, password):
 
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE usuarios
-
-        SET password=?
-
-        WHERE usuario=?
-        """,
-        (
-            hash_password(password),
-            usuario
-        )
-    )
-
-    conn.commit()
-    conn.close()
+  supabase.table("usuarios").update(
+      {"password": hash_password(password)}
+  ).eq("usuario", usuario).execute()
 
 
 def usuarios():
 
-    st.subheader(
-        "Administración de Usuarios"
+  st.subheader("Administración de Usuarios")
+
+  tab1, tab2, tab3 = st.tabs(["Crear", "Administrar", "Estadísticas"])
+
+  # ==================================
+  # CREAR
+  # ==================================
+
+  with tab1:
+
+    usuario = st.text_input("Usuario")
+
+    nombre = st.text_input("Nombre Completo")
+
+    password = st.text_input("Contraseña", type="password")
+
+    rol = st.selectbox("Rol", ["ADMIN", "USUARIO"])
+
+    if st.button("Crear Usuario"):
+
+      try:
+
+        crear_usuario(usuario, nombre, password, rol)
+
+        st.success("Usuario creado")
+
+        st.rerun()
+
+      except Exception as e:
+
+        st.error(str(e))
+
+  # ==================================
+  # ADMINISTRAR
+  # ==================================
+
+  with tab2:
+
+    response = (
+        supabase.table("usuarios")
+        .select("id,usuario,nombre,rol,activo")
+        .order("id", desc=True)
+        .execute()
     )
 
-    tab1, tab2, tab3 = st.tabs(
-        [
-            "Crear",
-            "Administrar",
-            "Estadísticas"
-        ]
-    )
+    df = pd.DataFrame(response.data)
 
-    # ==================================
-    # CREAR
-    # ==================================
+    st.dataframe(df, use_container_width=True)
 
-    with tab1:
+    if df.empty:
+      return
 
-        usuario = st.text_input(
-            "Usuario"
-        )
+    usuario_sel = st.selectbox("Usuario", df["usuario"].tolist())
 
-        nombre = st.text_input(
-            "Nombre Completo"
-        )
+    c1, c2 = st.columns(2)
 
-        password = st.text_input(
-            "Contraseña",
-            type="password"
-        )
+    with c1:
 
-        rol = st.selectbox(
-            "Rol",
-            [
-                "ADMIN",
-                "USUARIO"
-            ]
-        )
+      if st.button("Activar Usuario"):
 
-        if st.button(
-            "Crear Usuario"
-        ):
+        activar_usuario(usuario_sel)
 
-            try:
+        st.success("Usuario activado")
 
-                crear_usuario(
-                    usuario,
-                    nombre,
-                    password,
-                    rol
-                )
+        st.rerun()
 
-                st.success(
-                    "Usuario creado"
-                )
+    with c2:
 
-                st.rerun()
+      if st.button("Desactivar Usuario"):
 
-            except Exception as e:
+        if usuario_sel.lower() == "admin":
 
-                st.error(
-                    str(e)
-                )
+          st.error("No se puede desactivar admin")
 
-    # ==================================
-    # ADMINISTRAR
-    # ==================================
+        else:
 
-    with tab2:
+          desactivar_usuario(usuario_sel)
 
-        conn = get_connection()
+          st.success("Usuario desactivado")
 
-        df = pd.read_sql(
-            """
-            SELECT
+          st.rerun()
 
-                id,
-                usuario,
-                nombre,
-                rol,
-                activo
+    st.divider()
 
-            FROM usuarios
+    nueva_password = st.text_input("Nueva Contraseña", type="password")
 
-            ORDER BY id DESC
-            """,
-            conn
-        )
+    if st.button("Actualizar Contraseña"):
 
-        conn.close()
+      if nueva_password:
 
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
+        reset_password(usuario_sel, nueva_password)
 
-        if df.empty:
-            return
+        st.success("Contraseña actualizada")
 
-        usuario_sel = st.selectbox(
-            "Usuario",
-            df["usuario"].tolist()
-        )
+        st.rerun()
 
-        c1, c2 = st.columns(2)
+  # ==================================
+  # ESTADISTICAS
+  # ==================================
 
-        with c1:
+  with tab3:
 
-            if st.button(
-                "Activar Usuario"
-            ):
+    response = supabase.table("usuarios").select("*").execute()
 
-                activar_usuario(
-                    usuario_sel
-                )
+    usuarios_df = pd.DataFrame(response.data)
 
-                st.success(
-                    "Usuario activado"
-                )
+    if not usuarios_df.empty:
+      total = len(usuarios_df)
+      activos = len(usuarios_df[usuarios_df["activo"] == 1])
+      admins = len(usuarios_df[usuarios_df["rol"] == "ADMIN"])
+    else:
+      total = 0
+      activos = 0
+      admins = 0
 
-                st.rerun()
+    c1, c2, c3 = st.columns(3)
 
-        with c2:
+    c1.metric("Usuarios", total)
 
-            if st.button(
-                "Desactivar Usuario"
-            ):
+    c2.metric("Activos", activos)
 
-                if usuario_sel.lower() == "admin":
-
-                    st.error(
-                        "No se puede desactivar admin"
-                    )
-
-                else:
-
-                    desactivar_usuario(
-                        usuario_sel
-                    )
-
-                    st.success(
-                        "Usuario desactivado"
-                    )
-
-                    st.rerun()
-
-        st.divider()
-
-        nueva_password = st.text_input(
-            "Nueva Contraseña",
-            type="password"
-        )
-
-        if st.button(
-            "Actualizar Contraseña"
-        ):
-
-            if nueva_password:
-
-                reset_password(
-                    usuario_sel,
-                    nueva_password
-                )
-
-                st.success(
-                    "Contraseña actualizada"
-                )
-
-                st.rerun()
-
-    # ==================================
-    # ESTADISTICAS
-    # ==================================
-
-    with tab3:
-
-        conn = get_connection()
-
-        total = pd.read_sql(
-            """
-            SELECT COUNT(*) total
-            FROM usuarios
-            """,
-            conn
-        )
-
-        activos = pd.read_sql(
-            """
-            SELECT COUNT(*) total
-            FROM usuarios
-            WHERE activo=1
-            """,
-            conn
-        )
-
-        admins = pd.read_sql(
-            """
-            SELECT COUNT(*) total
-            FROM usuarios
-            WHERE rol='ADMIN'
-            """,
-            conn
-        )
-
-        conn.close()
-
-        c1, c2, c3 = st.columns(3)
-
-        c1.metric(
-            "Usuarios",
-            int(total["total"][0])
-        )
-
-        c2.metric(
-            "Activos",
-            int(activos["total"][0])
-        )
+    c3.metric("Administradores", admins)
 
         c3.metric(
             "Administradores",
