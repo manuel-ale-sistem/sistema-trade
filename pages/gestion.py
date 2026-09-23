@@ -1,4 +1,4 @@
-import os
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -93,13 +93,24 @@ def gestionar() -> None:
         ]
     )
 
-    if filtro != "TODOS":
-        df = df[df["estatus"] == filtro]
+    if (
+        filtro != "TODOS"
+        and "estatus" in df.columns
+    ):
+        df = df[
+            df["estatus"] == filtro
+        ]
 
     st.dataframe(df, use_container_width=True)
 
     if df.empty:
         st.warning("No hay registros para el filtro seleccionado.")
+        return
+
+    if "folio" not in df.columns:
+        st.error(
+            "La columna folio no existe en solicitudes."
+        )
         return
 
     folio = st.selectbox(
@@ -147,17 +158,30 @@ def gestionar() -> None:
             use_container_width=True
         )
 
+        estatuses = [
+            "CAPTURADA",
+            "ASIGNADA",
+            "EN_PROCESO",
+            "VISITA_REALIZADA",
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CANCELADA"
+        ]
+
+        indice = 0
+
+        if (
+            "estatus" in fila.index
+            and fila["estatus"] in estatuses
+        ):
+            indice = estatuses.index(
+                fila["estatus"]
+            )
+
         nuevo_estatus = st.selectbox(
             "Nuevo Estatus",
-            [
-                "CAPTURADA",
-                "ASIGNADA",
-                "EN_PROCESO",
-                "VISITA_REALIZADA",
-                "PRODUCTIVA",
-                "IMPRODUCTIVA",
-                "CANCELADA"
-            ]
+            estatuses,
+            index=indice
         )
 
         resultado = st.selectbox(
