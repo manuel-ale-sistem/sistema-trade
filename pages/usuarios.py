@@ -157,8 +157,3 @@ def usuarios():
     c2.metric("Activos", activos)
 
     c3.metric("Administradores", admins)
-
-        c3.metric(
-            "Administradores",
-            int(admins["total"][0])
-        )
