@@ -10,11 +10,6 @@ def hash_password(password):
     ).decode("utf-8")
 
 
-def create_tables():
-    """Nota: En Supabase las tablas se crean directamente mediante el panel SQL Editor."""
-    pass
-
-
 def crear_admin():
     """Crea un usuario administrador por defecto en Supabase si no existe."""
     try:
