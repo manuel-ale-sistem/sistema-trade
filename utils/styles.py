@@ -10,6 +10,12 @@ def aplicar_estilos_globales():
                ========================================== */
             .stApp {
                 background-color: #f8f9fa;
+                color: #212529 !important; /* Color de texto general oscuro y legible */
+            }
+
+            /* Forzar color de texto en párrafos, etiquetas y textos generales */
+            p, span, label, div, .stMarkdown {
+                color: #212529;
             }
 
             /* Tipografía y color global para títulos y encabezados */
@@ -72,6 +78,12 @@ def aplicar_estilos_globales():
             section[data-testid="stSidebar"] {
                 background-color: #ffffff;
                 border-right: 1px solid #e0e0e0;
+            }
+
+            section[data-testid="stSidebar"] p, 
+            section[data-testid="stSidebar"] span, 
+            section[data-testid="stSidebar"] label {
+                color: #212529 !important;
             }
         </style>
         """,
