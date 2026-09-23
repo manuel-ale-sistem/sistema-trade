@@ -10,10 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from pypdf import PdfReader
 
-# Funciones de guardado migradas a Supabase
-from database import (
-    guardar_especificaciones
-)
+# Funciones de guardado migradas a Supabase (eliminado guardar_especificaciones de aquí)
 
 from utils.folios import (
     generar_folio
@@ -78,7 +75,6 @@ SOLICITUDES_CON_MODELO = [
 
 @st.cache_data
 def obtener_catalogo(tipo):
-
     response = (
         supabase
         .table("catalogos")
@@ -98,7 +94,6 @@ def obtener_catalogo(tipo):
 
 @st.cache_data
 def obtener_modelos():
-
     response = (
         supabase
         .table("catalogos")
@@ -118,13 +113,12 @@ def obtener_modelos():
 
 
 # ==========================================
-# OBTENER ESPECIFICACIONES DESDE SUPABASE
+# OBTENER Y GUARDAR ESPECIFICACIONES (SUPABASE)
 # ==========================================
 
 def obtener_especificaciones(
     catalogo_id
 ):
-
     response = (
         supabase
         .table("modelos_detalle")
@@ -139,6 +133,22 @@ def obtener_especificaciones(
     return pd.DataFrame(
         response.data
     )
+
+
+def guardar_especificaciones(
+    catalogo_id,
+    datos
+):
+    registro = {
+        "catalogo_id": catalogo_id,
+        **datos
+    }
+
+    supabase.table(
+        "modelos_detalle"
+    ).insert(
+        registro
+    ).execute()
 
 
 # ==========================================
@@ -158,7 +168,6 @@ def guardar_detalle_solicitud(
     capacidad_actual="",
     capacidad_solicitada=""
 ):
-
     supabase.table(
         "solicitud_detalle"
     ).insert(
@@ -241,7 +250,6 @@ def extraer_datos_pdf(texto):
 
 
 def captura_form():
-
     if "requerimientos" not in st.session_state:
         st.session_state.requerimientos = []
 
@@ -308,7 +316,6 @@ def captura_form():
     col1, col2 = st.columns(2)
 
     with col1:
-
         jefatura = st.selectbox(
             "Jefatura",
             jefaturas
@@ -338,7 +345,6 @@ def captura_form():
         )
 
     with col2:
-
         sap = st.text_input(
             "SAP Cliente"
         )
@@ -394,7 +400,6 @@ def captura_form():
         ]
 
         if not modelo_info.empty:
-
             ruta_imagen = (
                 modelo_info.iloc[0]["imagen_path"]
             )
@@ -474,21 +479,12 @@ def captura_form():
                             datos_pdf.get("temperatura", "N/D")
                         )
 
-                try:
-                    with open(
-                        ruta_pdf,
-                        "rb"
-                    ) as pdf_file:
-                        pdf_bytes = pdf_file.read()
-
-                    st.download_button(
-                        "📥 Descargar Ficha Técnica",
-                        data=pdf_bytes,
-                        file_name=f"{modelo_seleccionado}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
+                if ruta_pdf:
+                    st.link_button(
+                        "📄 Descargar Ficha Técnica",
+                        ruta_pdf
                     )
-                except Exception:
+                else:
                     st.warning(
                         "PDF no disponible"
                     )
@@ -544,7 +540,6 @@ def captura_form():
     )
 
     if st.button("➕ Agregar Requerimiento"):
-
         if (
             tipo_req in SOLICITUDES_CON_MODELO
             and not datos_requerimiento.get("modelo")
@@ -567,7 +562,6 @@ def captura_form():
         st.rerun()
 
     if st.session_state.requerimientos:
-
         st.markdown(
             "### ✅ Requerimientos Capturados"
         )
@@ -575,20 +569,16 @@ def captura_form():
         for idx, req in enumerate(
             st.session_state.requerimientos
         ):
-
             with st.container(border=True):
-
                 st.markdown(
                     f"### {idx+1}. {req['categoria']} - {req['tipo']}"
                 )
 
                 for key, value in req.items():
-
                     if key not in [
                         "categoria",
                         "tipo"
                     ]:
-
                         st.write(
                             f"**{key}:** {value}"
                         )
@@ -615,9 +605,7 @@ def captura_form():
     longitud = ""
 
     try:
-
         if "?q=" in url_maps:
-
             coordenadas = (
                 url_maps
                 .split("?q=")[1]
@@ -626,9 +614,7 @@ def captura_form():
             latitud, longitud = (
                 coordenadas.split(",")
             )
-
     except Exception:
-
         latitud = ""
         longitud = ""
 
@@ -651,33 +637,26 @@ def captura_form():
         "Guardar Solicitud",
         use_container_width=True
     ):
-
         if not validar_sap(sap):
-
             st.error(
                 "SAP inválido"
             )
-
             return
 
         if not validar_texto(
             negocio
         ):
-
             st.error(
                 "Ingrese negocio"
             )
-
             return
 
         if not validar_telefono(
             telefono
         ):
-
             st.error(
                 "Teléfono inválido. Debe tener 10 dígitos."
             )
-
             return
 
         try:
