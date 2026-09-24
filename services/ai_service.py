@@ -622,6 +622,102 @@ No existen datos suficientes.
 
 
 # ==========================================
+# JEFATURA LIDER
+# ==========================================
+def jefatura_lider():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "No existen datos."
+    contador = Counter()
+    for fila in solicitudes:
+        jefatura = fila.get(
+            "jefatura"
+        )
+        if jefatura:
+            contador[jefatura] += 1
+    lider = contador.most_common(1)
+    if not lider:
+        return "No existen datos."
+    nombre = lider[0][0]
+    total = lider[0][1]
+    return f"""
+🏆 JEFATURA LÍDER
+Jefatura:
+{nombre}
+Solicitudes:
+{total}
+"""
+
+
+# ==========================================
+# ASESOR LIDER
+# ==========================================
+def asesor_lider():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "No existen datos."
+    contador = Counter()
+    for fila in solicitudes:
+        asesor = fila.get(
+            "asesor"
+        )
+        if asesor:
+            contador[asesor] += 1
+    lider = contador.most_common(1)
+    if not lider:
+        return "No existen datos."
+    nombre = lider[0][0]
+    total = lider[0][1]
+    return f"""
+🏆 ASESOR LÍDER
+Asesor:
+{nombre}
+Solicitudes:
+{total}
+"""
+
+
+# ==========================================
+# RUTA LIDER
+# ==========================================
+def ruta_lider():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "No existen datos."
+    contador = Counter()
+    for fila in solicitudes:
+        ruta = fila.get(
+            "ruta"
+        )
+        if ruta:
+            contador[ruta] += 1
+    lider = contador.most_common(1)
+    if not lider:
+        return "No existen datos."
+    nombre = lider[0][0]
+    total = lider[0][1]
+    return f"""
+🏆 RUTA LÍDER
+Ruta:
+{nombre}
+Solicitudes:
+{total}
+"""
+
+
+# ==========================================
+# RANKING OPERATIVO
+# ==========================================
+def ranking_operativo():
+    return f"""
+📈 RANKING OPERATIVO
+{jefatura_lider()}
+{asesor_lider()}
+{ruta_lider()}
+"""
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -808,6 +904,18 @@ def responder_trade_ai(pregunta):
     ):
         return tendencias_solicitudes()
 
+    if any(
+        x in pregunta
+        for x in [
+            "RANKING",
+            "LIDER",
+            "LÍDER",
+            "DESEMPEÑO GENERAL",
+            "OPERATIVO"
+        ]
+    ):
+        return ranking_operativo()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -842,6 +950,7 @@ Comandos disponibles:
 • SOLICITUDES CRÍTICAS
 • ALERTAS
 • TENDENCIAS
+• RANKING / LÍDERES
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
