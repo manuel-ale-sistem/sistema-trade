@@ -1,123 +1,482 @@
+from collections import Counter
 import streamlit as st
-
-from services.ai_service import (
-    responder_trade_ai
-)
+from supabase_config import supabase
 
 
-def trade_ai():
+# ==========================================
+# OBTENER DATOS
+# ==========================================
 
-    st.subheader(
-        "🤖 Trade AI Assistant"
+def obtener_solicitudes():
+    return (
+        supabase
+        .table("solicitudes")
+        .select("*")
+        .execute()
+        .data
     )
 
-    st.success(
-        """
-Bienvenido a Trade AI.
-Puedes consultar información operativa,
-folios, estadísticas e indicadores
-del sistema Trade.
+
+def obtener_historial():
+    return (
+        supabase
+        .table("historial")
+        .select("*")
+        .execute()
+        .data
+    )
+
+
+def obtener_accesos():
+    return (
+        supabase
+        .table("accesos")
+        .select("*")
+        .execute()
+        .data
+    )
+
+
+# ==========================================
+# RESUMEN GENERAL
+# ==========================================
+
+def obtener_resumen_general():
+    try:
+        solicitudes = obtener_solicitudes()
+        historial = obtener_historial()
+        accesos = obtener_accesos()
+
+        abiertas = [
+            s
+            for s in solicitudes
+            if s.get("estatus")
+            not in [
+                "PRODUCTIVA",
+                "IMPRODUCTIVA",
+                "CERRADA"
+            ]
+        ]
+
+        return f"""
+📊 RESUMEN TRADE
+
+Solicitudes Totales:
+{len(solicitudes)}
+
+Solicitudes Abiertas:
+{len(abiertas)}
+
+Movimientos Historial:
+{len(historial)}
+
+Accesos Registrados:
+{len(accesos)}
 """
-    )
 
-    st.info(
-        """
-💬 Puedes escribir preguntas naturales:
-¿Cuántas solicitudes abiertas hay?
-Dame un resumen general.
-¿Cuál es el modelo más solicitado?
-¿Qué jefatura tiene más solicitudes?
-Muéstrame los indicadores.
-FOLIO TRD-XXXXXX
-"""
-    )
+    except Exception as e:
+        return f"Error: {e}"
 
-    # ==========================================
-    # BOTONES RÁPIDOS
-    # ==========================================
-    col1, col2, col3 = st.columns(3)
 
-    with col1:
-        if st.button("📊 RESUMEN", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "RESUMEN",
-                    responder_trade_ai("RESUMEN")
-                )
-            )
+# ==========================================
+# BUSQUEDA DE FOLIOS
+# ==========================================
 
-    with col2:
-        if st.button("🤖 INSIGHTS", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "INSIGHTS",
-                    responder_trade_ai("INSIGHTS")
-                )
-            )
-
-    with col3:
-        if st.button("📂 ABIERTAS", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "ABIERTAS",
-                    responder_trade_ai("ABIERTAS")
-                )
-            )
-
-    if (
-        "chat_trade_ai"
-        not in st.session_state
-    ):
-
-        st.session_state[
-            "chat_trade_ai"
-        ] = []
-
-    pregunta = st.chat_input(
-        "Pregunta algo sobre Trade..."
-    )
-
-    if pregunta:
-
-        respuesta = (
-            responder_trade_ai(
-                pregunta
-            )
+def buscar_folio(folio):
+    try:
+        solicitud = (
+            supabase
+            .table("solicitudes")
+            .select("*")
+            .eq("folio", folio)
+            .execute()
+            .data
         )
 
+        if not solicitud:
+            return f"No encontré el folio {folio}"
+
+        datos = solicitud[0]
+
+        # MEMORIA DEL ÚLTIMO FOLIO
         st.session_state[
-            "chat_trade_ai"
-        ].append(
-            (
-                pregunta,
-                respuesta
-            )
+            "ultimo_folio_ai"
+        ] = folio
+
+        historial = (
+            supabase
+            .table("historial")
+            .select("*")
+            .eq("folio", folio)
+            .execute()
+            .data
         )
 
-    for pregunta, respuesta in reversed(
-        st.session_state[
-            "chat_trade_ai"
+        return f"""
+📋 FOLIO
+
+Folio:
+{folio}
+
+Estatus:
+{datos.get("estatus")}
+
+Negocio:
+{datos.get("negocio")}
+
+Canal:
+{datos.get("canal")}
+
+GEC:
+{datos.get("gec")}
+
+Usuario:
+{datos.get("usuario")}
+
+Movimientos:
+{len(historial)}
+"""
+
+    except Exception as e:
+        return f"Error: {e}"
+
+
+# ==========================================
+# CONSULTAR ÚLTIMO FOLIO EN MEMORIA
+# ==========================================
+
+def consultar_ultimo_folio():
+    folio = st.session_state.get(
+        "ultimo_folio_ai"
+    )
+    if not folio:
+        return """
+No tengo un folio en contexto.
+Primero consulta algo como:
+FOLIO TRD-000001
+"""
+    return buscar_folio(folio)
+
+
+# ==========================================
+# ABIERTAS
+# ==========================================
+
+def solicitudes_abiertas():
+    solicitudes = obtener_solicitudes()
+
+    abiertas = [
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ]
+
+    return f"""
+📂 SOLICITUDES ABIERTAS
+
+Total:
+{len(abiertas)}
+"""
+
+
+# ==========================================
+# PRODUCTIVAS
+# ==========================================
+
+def solicitudes_productivas():
+    solicitudes = obtener_solicitudes()
+
+    total = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+
+    return f"""
+✅ PRODUCTIVAS
+
+Total:
+{total}
+"""
+
+
+# ==========================================
+# IMPRODUCTIVAS
+# ==========================================
+
+def solicitudes_improductivas():
+    solicitudes = obtener_solicitudes()
+
+    total = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "IMPRODUCTIVA"
+    ])
+
+    return f"""
+❌ IMPRODUCTIVAS
+
+Total:
+{total}
+"""
+
+
+# ==========================================
+# TOP MODELOS
+# ==========================================
+
+def top_modelos():
+    detalles = (
+        supabase
+        .table("solicitud_detalle")
+        .select("modelo")
+        .execute()
+        .data
+    )
+
+    contador = Counter()
+
+    for fila in detalles:
+        modelo = fila.get("modelo")
+
+        if modelo:
+            contador[modelo] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP MODELOS\n\n"
+
+    for modelo, cantidad in top:
+        respuesta += f"• {modelo}: {cantidad}\n"
+
+    return respuesta
+
+
+# ==========================================
+# TOP JEFATURAS
+# ==========================================
+
+def top_jefaturas():
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+        valor = fila.get("jefatura")
+
+        if valor:
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP JEFATURAS\n\n"
+
+    for nombre, cantidad in top:
+        respuesta += f"• {nombre}: {cantidad}\n"
+
+    return respuesta
+
+
+# ==========================================
+# TOP CANALES
+# ==========================================
+
+def top_canales():
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+        valor = fila.get("canal")
+
+        if valor:
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP CANALES\n\n"
+
+    for nombre, cantidad in top:
+        respuesta += f"• {nombre}: {cantidad}\n"
+
+    return respuesta
+
+
+# ==========================================
+# TOP GEC
+# ==========================================
+
+def top_gec():
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+        valor = fila.get("gec")
+
+        if valor:
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP GEC\n\n"
+
+    for nombre, cantidad in top:
+        respuesta += f"• {nombre}: {cantidad}\n"
+
+    return respuesta
+
+
+# ==========================================
+# INSIGHTS
+# ==========================================
+
+def generar_insights():
+    solicitudes = obtener_solicitudes()
+
+    if not solicitudes:
+        return "No existen datos suficientes."
+
+    total = len(solicitudes)
+
+    abiertas = len([
+        s for s in solicitudes
+        if s.get("estatus")
+        not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ])
+
+    productivas = len([
+        s for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+
+    contador_jefaturas = Counter()
+
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+
+        if jefatura:
+            contador_jefaturas[jefatura] += 1
+
+    top_jefatura = contador_jefaturas.most_common(1)
+
+    if top_jefatura:
+        nombre_jefatura = top_jefatura[0][0]
+        cantidad_jefatura = top_jefatura[0][1]
+    else:
+        nombre_jefatura = "N/D"
+        cantidad_jefatura = 0
+
+    eficiencia = 0
+
+    if total > 0:
+        eficiencia = round(
+            (productivas / total) * 100,
+            1
+        )
+
+    return f"""
+🤖 INSIGHTS TRADE
+
+Solicitudes Totales:
+{total}
+
+Solicitudes Abiertas:
+{abiertas}
+
+Solicitudes Productivas:
+{productivas}
+
+Jefatura con mayor volumen:
+{nombre_jefatura}
+
+Solicitudes en esa jefatura:
+{cantidad_jefatura}
+
+Efectividad Operativa:
+{eficiencia} %
+"""
+
+
+# ==========================================
+# RESPONDER IA
+# ==========================================
+
+def responder_trade_ai(pregunta):
+    pregunta = pregunta.upper().strip()
+
+    if pregunta == "RESUMEN":
+        return obtener_resumen_general()
+
+    if pregunta == "ABIERTAS":
+        return solicitudes_abiertas()
+
+    if pregunta == "PRODUCTIVAS":
+        return solicitudes_productivas()
+
+    if pregunta == "IMPRODUCTIVAS":
+        return solicitudes_improductivas()
+
+    if pregunta == "TOP MODELOS":
+        return top_modelos()
+
+    if pregunta == "TOP JEFATURAS":
+        return top_jefaturas()
+
+    if pregunta == "TOP CANALES":
+        return top_canales()
+
+    if pregunta == "TOP GEC":
+        return top_gec()
+
+    if pregunta == "INSIGHTS":
+        return generar_insights()
+
+    if any(
+        x in pregunta
+        for x in [
+            "ESTATUS",
+            "QUIEN LO CAPTURO",
+            "QUIÉN LO CAPTURÓ",
+            "ULTIMO FOLIO",
+            "ÚLTIMO FOLIO"
         ]
     ):
+        return consultar_ultimo_folio()
 
-        with st.chat_message(
-            "user"
-        ):
+    if "FOLIO" in pregunta:
+        partes = pregunta.split()
 
-            st.write(
-                pregunta
-            )
+        for palabra in partes:
+            if palabra.startswith("TRD"):
+                return buscar_folio(palabra)
 
-        with st.chat_message(
-            "assistant"
-        ):
+    return """
+🤖 TRADE AI
 
-            st.write(
-                respuesta
-            )
+Comandos disponibles:
+
+• RESUMEN
+• ABIERTAS
+• PRODUCTIVAS
+• IMPRODUCTIVAS
+• TOP MODELOS
+• TOP JEFATURAS
+• TOP CANALES
+• TOP GEC
+• INSIGHTS
+• ÚLTIMO FOLIO
+• FOLIO TRD-XXXXXX
+"""
