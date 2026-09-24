@@ -22,26 +22,12 @@ del sistema Trade.
 
     st.info(
         """
-Comandos disponibles:
-
-RESUMEN
-
-INSIGHTS
-
-ABIERTAS
-
-PRODUCTIVAS
-
-IMPRODUCTIVAS
-
-TOP MODELOS
-
-TOP JEFATURAS
-
-TOP CANALES
-
-TOP GEC
-
+💬 Puedes escribir preguntas naturales:
+¿Cuántas solicitudes abiertas hay?
+Dame un resumen general.
+¿Cuál es el modelo más solicitado?
+¿Qué jefatura tiene más solicitudes?
+Muéstrame los indicadores.
 FOLIO TRD-XXXXXX
 """
     )
