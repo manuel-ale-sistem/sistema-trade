@@ -582,6 +582,46 @@ tienen menos de 7 días.
 
 
 # ==========================================
+# TENDENCIAS DE SOLICITUDES
+# ==========================================
+def tendencias_solicitudes():
+    try:
+        detalles = (
+            supabase
+            .table("solicitud_detalle")
+            .select("tipo_solicitud")
+            .execute()
+            .data
+        )
+        if not detalles:
+            return """
+📈 TENDENCIAS
+No existen datos suficientes.
+"""
+        contador = Counter()
+        for fila in detalles:
+            tipo = fila.get(
+                "tipo_solicitud"
+            )
+            if tipo:
+                contador[tipo] += 1
+        top = contador.most_common(10)
+        respuesta = (
+            "📈 TENDENCIAS DE SOLICITUDES\n\n"
+        )
+        for tipo, cantidad in top:
+            respuesta += (
+                f"• {tipo}: "
+                f"{cantidad} registros\n"
+            )
+        return respuesta
+    except Exception as e:
+        return (
+            f"Error analizando tendencias: {e}"
+        )
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -755,6 +795,19 @@ def responder_trade_ai(pregunta):
     ):
         return solicitudes_criticas()
 
+    if any(
+        x in pregunta
+        for x in [
+            "TENDENCIA",
+            "TENDENCIAS",
+            "CRECIMIENTO",
+            "AUMENTANDO",
+            "SOLICITUDES MAS FRECUENTES",
+            "SOLICITUDES MÁS FRECUENTES"
+        ]
+    ):
+        return tendencias_solicitudes()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -788,6 +841,7 @@ Comandos disponibles:
 • EFECTIVIDAD JEFATURAS
 • SOLICITUDES CRÍTICAS
 • ALERTAS
+• TENDENCIAS
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
