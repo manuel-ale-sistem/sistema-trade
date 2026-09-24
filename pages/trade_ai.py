@@ -88,7 +88,7 @@ FOLIO TRD-XXXXXX
     )
 
     # ==========================================
-    # BOTONES RÁPIDOS
+    # BOTONES RÁPIDOS (FILA 1)
     # ==========================================
     col1, col2, col3 = st.columns(3)
 
@@ -122,6 +122,44 @@ FOLIO TRD-XXXXXX
                 (
                     "ABIERTAS",
                     responder_trade_ai("ABIERTAS")
+                )
+            )
+
+    # ==========================================
+    # BOTONES RÁPIDOS (FILA 2)
+    # ==========================================
+    col4, col5, col6 = st.columns(3)
+
+    with col4:
+        if st.button("🏆 ASESORES", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "TOP ASESORES",
+                    responder_trade_ai("TOP ASESORES")
+                )
+            )
+
+    with col5:
+        if st.button("🛣️ RUTAS", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "TOP RUTAS",
+                    responder_trade_ai("TOP RUTAS")
+                )
+            )
+
+    with col6:
+        if st.button("📈 EFECTIVIDAD", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "EFECTIVIDAD JEFATURAS",
+                    responder_trade_ai("EFECTIVIDAD JEFATURAS")
                 )
             )
 
