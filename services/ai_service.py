@@ -1,5 +1,4 @@
 from collections import Counter
-
 from supabase_config import supabase
 
 
@@ -8,7 +7,6 @@ from supabase_config import supabase
 # ==========================================
 
 def obtener_solicitudes():
-
     return (
         supabase
         .table("solicitudes")
@@ -19,7 +17,6 @@ def obtener_solicitudes():
 
 
 def obtener_historial():
-
     return (
         supabase
         .table("historial")
@@ -30,7 +27,6 @@ def obtener_historial():
 
 
 def obtener_accesos():
-
     return (
         supabase
         .table("accesos")
@@ -45,9 +41,7 @@ def obtener_accesos():
 # ==========================================
 
 def obtener_resumen_general():
-
     try:
-
         solicitudes = obtener_solicitudes()
         historial = obtener_historial()
         accesos = obtener_accesos()
@@ -80,7 +74,6 @@ Accesos Registrados:
 """
 
     except Exception as e:
-
         return f"Error: {e}"
 
 
@@ -89,9 +82,7 @@ Accesos Registrados:
 # ==========================================
 
 def buscar_folio(folio):
-
     try:
-
         solicitud = (
             supabase
             .table("solicitudes")
@@ -102,10 +93,7 @@ def buscar_folio(folio):
         )
 
         if not solicitud:
-
-            return (
-                f"No encontré el folio {folio}"
-            )
+            return f"No encontré el folio {folio}"
 
         datos = solicitud[0]
 
@@ -144,7 +132,6 @@ Movimientos:
 """
 
     except Exception as e:
-
         return f"Error: {e}"
 
 
@@ -153,7 +140,6 @@ Movimientos:
 # ==========================================
 
 def solicitudes_abiertas():
-
     solicitudes = obtener_solicitudes()
 
     abiertas = [
@@ -180,7 +166,6 @@ Total:
 # ==========================================
 
 def solicitudes_productivas():
-
     solicitudes = obtener_solicitudes()
 
     total = len([
@@ -203,7 +188,6 @@ Total:
 # ==========================================
 
 def solicitudes_improductivas():
-
     solicitudes = obtener_solicitudes()
 
     total = len([
@@ -226,7 +210,6 @@ Total:
 # ==========================================
 
 def top_modelos():
-
     detalles = (
         supabase
         .table("solicitud_detalle")
@@ -238,11 +221,9 @@ def top_modelos():
     contador = Counter()
 
     for fila in detalles:
-
         modelo = fila.get("modelo")
 
         if modelo:
-
             contador[modelo] += 1
 
     top = contador.most_common(10)
@@ -250,10 +231,7 @@ def top_modelos():
     respuesta = "🏆 TOP MODELOS\n\n"
 
     for modelo, cantidad in top:
-
-        respuesta += (
-            f"• {modelo}: {cantidad}\n"
-        )
+        respuesta += f"• {modelo}: {cantidad}\n"
 
     return respuesta
 
@@ -263,17 +241,14 @@ def top_modelos():
 # ==========================================
 
 def top_jefaturas():
-
     solicitudes = obtener_solicitudes()
 
     contador = Counter()
 
     for fila in solicitudes:
-
         valor = fila.get("jefatura")
 
         if valor:
-
             contador[valor] += 1
 
     top = contador.most_common(10)
@@ -281,10 +256,7 @@ def top_jefaturas():
     respuesta = "🏆 TOP JEFATURAS\n\n"
 
     for nombre, cantidad in top:
-
-        respuesta += (
-            f"• {nombre}: {cantidad}\n"
-        )
+        respuesta += f"• {nombre}: {cantidad}\n"
 
     return respuesta
 
@@ -294,17 +266,14 @@ def top_jefaturas():
 # ==========================================
 
 def top_canales():
-
     solicitudes = obtener_solicitudes()
 
     contador = Counter()
 
     for fila in solicitudes:
-
         valor = fila.get("canal")
 
         if valor:
-
             contador[valor] += 1
 
     top = contador.most_common(10)
@@ -312,10 +281,7 @@ def top_canales():
     respuesta = "🏆 TOP CANALES\n\n"
 
     for nombre, cantidad in top:
-
-        respuesta += (
-            f"• {nombre}: {cantidad}\n"
-        )
+        respuesta += f"• {nombre}: {cantidad}\n"
 
     return respuesta
 
@@ -325,17 +291,14 @@ def top_canales():
 # ==========================================
 
 def top_gec():
-
     solicitudes = obtener_solicitudes()
 
     contador = Counter()
 
     for fila in solicitudes:
-
         valor = fila.get("gec")
 
         if valor:
-
             contador[valor] += 1
 
     top = contador.most_common(10)
@@ -343,12 +306,85 @@ def top_gec():
     respuesta = "🏆 TOP GEC\n\n"
 
     for nombre, cantidad in top:
-
-        respuesta += (
-            f"• {nombre}: {cantidad}\n"
-        )
+        respuesta += f"• {nombre}: {cantidad}\n"
 
     return respuesta
+
+
+# ==========================================
+# INSIGHTS
+# ==========================================
+
+def generar_insights():
+    solicitudes = obtener_solicitudes()
+
+    if not solicitudes:
+        return "No existen datos suficientes."
+
+    total = len(solicitudes)
+
+    abiertas = len([
+        s for s in solicitudes
+        if s.get("estatus")
+        not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ])
+
+    productivas = len([
+        s for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+
+    contador_jefaturas = Counter()
+
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+
+        if jefatura:
+            contador_jefaturas[jefatura] += 1
+
+    top_jefatura = contador_jefaturas.most_common(1)
+
+    if top_jefatura:
+        nombre_jefatura = top_jefatura[0][0]
+        cantidad_jefatura = top_jefatura[0][1]
+    else:
+        nombre_jefatura = "N/D"
+        cantidad_jefatura = 0
+
+    eficiencia = 0
+
+    if total > 0:
+        eficiencia = round(
+            (productivas / total) * 100,
+            1
+        )
+
+    return f"""
+🤖 INSIGHTS TRADE
+
+Solicitudes Totales:
+{total}
+
+Solicitudes Abiertas:
+{abiertas}
+
+Solicitudes Productivas:
+{productivas}
+
+Jefatura con mayor volumen:
+{nombre_jefatura}
+
+Solicitudes en esa jefatura:
+{cantidad_jefatura}
+
+Efectividad Operativa:
+{eficiencia} %
+"""
 
 
 # ==========================================
@@ -356,52 +392,41 @@ def top_gec():
 # ==========================================
 
 def responder_trade_ai(pregunta):
-
     pregunta = pregunta.upper().strip()
 
     if pregunta == "RESUMEN":
-
         return obtener_resumen_general()
 
     if pregunta == "ABIERTAS":
-
         return solicitudes_abiertas()
 
     if pregunta == "PRODUCTIVAS":
-
         return solicitudes_productivas()
 
     if pregunta == "IMPRODUCTIVAS":
-
         return solicitudes_improductivas()
 
     if pregunta == "TOP MODELOS":
-
         return top_modelos()
 
     if pregunta == "TOP JEFATURAS":
-
         return top_jefaturas()
 
     if pregunta == "TOP CANALES":
-
         return top_canales()
 
     if pregunta == "TOP GEC":
-
         return top_gec()
 
-    if "FOLIO" in pregunta:
+    if pregunta == "INSIGHTS":
+        return generar_insights()
 
+    if "FOLIO" in pregunta:
         partes = pregunta.split()
 
         for palabra in partes:
-
             if palabra.startswith("TRD"):
-
-                return buscar_folio(
-                    palabra
-                )
+                return buscar_folio(palabra)
 
     return """
 🤖 TRADE AI
@@ -416,5 +441,6 @@ Comandos disponibles:
 • TOP JEFATURAS
 • TOP CANALES
 • TOP GEC
+• INSIGHTS
 • FOLIO TRD-XXXXXX
 """
