@@ -13,9 +13,85 @@ def obtener_solicitudes():
     )
 
 
+def top_jefaturas():
+    solicitudes = obtener_solicitudes()
+    contador = Counter()
+
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+        if jefatura:
+            contador[jefatura] += 1
+
+    top = contador.most_common(5)
+    respuesta = "🏆 TOP JEFATURAS\n\n"
+
+    for nombre, cantidad in top:
+        respuesta += f"- {nombre}: {cantidad} solicitudes\n"
+
+    return respuesta
+
+
+def top_modelos():
+    try:
+        detalles = (
+            supabase
+            .table("solicitud_detalle")
+            .select("modelo")
+            .execute()
+            .data
+        )
+
+        contador = Counter()
+        for fila in detalles:
+            modelo = fila.get("modelo")
+            if modelo:
+                contador[modelo] += 1
+
+        top = contador.most_common(5)
+        respuesta = "🏆 TOP MODELOS\n\n"
+
+        for modelo, cantidad in top:
+            respuesta += f"- {modelo}: {cantidad}\n"
+
+        return respuesta
+    except Exception as e:
+        return f"Error al consultar modelos: {e}"
+
+
+def solicitudes_improductivas():
+    solicitudes = obtener_solicitudes()
+    total = len(
+        [
+            s
+            for s in solicitudes
+            if s.get("estatus") == "IMPRODUCTIVA"
+        ]
+    )
+
+    return f"""❌ SOLICITUDES IMPRODUCTIVAS
+
+Total: {total}
+"""
+
+
+def solicitudes_productivas():
+    solicitudes = obtener_solicitudes()
+    total = len(
+        [
+            s
+            for s in solicitudes
+            if s.get("estatus") == "PRODUCTIVA"
+        ]
+    )
+
+    return f"""✅ SOLICITUDES PRODUCTIVAS
+
+Total: {total}
+"""
+
+
 def solicitudes_abiertas():
     solicitudes = obtener_solicitudes()
-
     abiertas = [
         s
         for s in solicitudes
@@ -28,20 +104,13 @@ def solicitudes_abiertas():
 
     return f"""📂 SOLICITUDES ABIERTAS
 
-Total:
-{len(abiertas)}"""
+Total: {len(abiertas)}"""
 
 
 def obtener_resumen_general():
     try:
-        solicitudes = (
-            supabase
-            .table("solicitudes")
-            .select("*")
-            .execute()
-            .data
-        )
-
+        solicitudes = obtener_solicitudes()
+        
         historial = (
             supabase
             .table("historial")
@@ -137,17 +206,35 @@ def responder_trade_ai(pregunta):
     if "RESUMEN" in pregunta:
         return obtener_resumen_general()
 
+    if "ABIERTAS" in pregunta:
+        return solicitudes_abiertas()
+
+    if "PRODUCTIVAS" in pregunta and "IMPRODUCTIVAS" not in pregunta:
+        return solicitudes_productivas()
+
+    if "IMPRODUCTIVAS" in pregunta:
+        return solicitudes_improductivas()
+
+    if "JEFATURAS" in pregunta or "TOP JEFATURAS" in pregunta:
+        return top_jefaturas()
+
+    if "MODELOS" in pregunta or "TOP MODELOS" in pregunta:
+        return top_modelos()
+
     if "FOLIO" in pregunta:
         partes = pregunta.split()
-
         for palabra in partes:
             if palabra.startswith("TRD"):
                 return buscar_folio(palabra)
 
-    return """🤖 Trade AI
+    return """🤖 Trade AI - ¿Qué deseas consultar?
 
 Puedes preguntar:
-
 - RESUMEN
+- ABIERTAS
+- PRODUCTIVAS
+- IMPRODUCTIVAS
+- TOP JEFATURAS
+- TOP MODELOS
 - FOLIO TRD-XXXXX
 """
