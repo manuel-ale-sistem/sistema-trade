@@ -86,6 +86,10 @@ Dame un resumen general.
 Muéstrame incidencias.
 ¿Qué jefatura tiene más solicitudes?
 Muéstrame los indicadores.
+¿Hay solicitudes críticas?
+Muéstrame las alertas operativas.
+¿Qué solicitudes llevan más de 7 días?
+Solicitudes atrasadas.
 FOLIO TRD-XXXXXX
 """
     )
