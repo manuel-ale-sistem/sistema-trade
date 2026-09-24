@@ -1,12 +1,6 @@
 [theme]
-base = "dark"
-
-primaryColor = "#00FF66"
-
-backgroundColor = "#000000"
-
-secondaryBackgroundColor = "#121212"
-
-textColor = "#FFFFFF"
-
-font = "sans serif"
+base = "light"
+primaryColor = "#1b365d"
+backgroundColor = "#f4f7fb"          # Este es el fondo azulado muy sutil que elegimos
+secondaryBackgroundColor = "#ffffff" # Color para tarjetas, entradas y barra lateral
+textColor = "#212529"
