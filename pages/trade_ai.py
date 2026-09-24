@@ -13,11 +13,14 @@ def trade_ai():
 
     st.info(
         """
-Ejemplos:
-
+🤖 Ejemplos
 RESUMEN
-
-FOLIO TRD-2026-00001
+ABIERTAS
+PRODUCTIVAS
+IMPRODUCTIVAS
+TOP MODELOS
+TOP JEFATURAS
+FOLIO TRD-XXXXXX
 """
     )
 
