@@ -3,16 +3,8 @@ import streamlit as st
 from supabase_config import supabase
 from services.accesos_service import registrar_acceso
 
-# Consulta inicial de prueba (opcional)
-response = (
-    supabase.table("usuarios")
-    .select("*")
-    .execute()
-)
-
-st.write("TODOS LOS USUARIOS:", response.data)
-
 def verificar_password(password, password_hash):
+    """Verifica si la contraseña ingresada coincide con el hash almacenado."""
     return bcrypt.checkpw(
         password.encode("utf-8"),
         password_hash.encode("utf-8")
@@ -20,6 +12,7 @@ def verificar_password(password, password_hash):
 
 
 def login(usuario, password):
+    """Realiza la autenticación del usuario consultando Supabase."""
     try:
         response = (
             supabase.table("usuarios")
@@ -27,8 +20,6 @@ def login(usuario, password):
             .eq("usuario", usuario)
             .execute()
         )
-
-        st.write("DEBUG RESPONSE:", response.data)
 
         datos = response.data
 
@@ -38,15 +29,16 @@ def login(usuario, password):
 
         usuario_db = datos[0]
 
-        st.write("DEBUG HASH:", usuario_db["password"])
-        st.write("DEBUG ACTIVO:", usuario_db["activo"])
+        # Validar si el usuario está activo (opcional si manejas estatus)
+        if usuario_db.get("activo", 1) == 0:
+            st.error("Este usuario se encuentra inactivo")
+            return None
 
+        # Verificar la contraseña encriptada
         resultado = verificar_password(
             password,
             usuario_db["password"]
         )
-
-        st.write("DEBUG PASSWORD OK:", resultado)
 
         if resultado:
             registrar_acceso(usuario, "LOGIN")
@@ -55,5 +47,5 @@ def login(usuario, password):
         return None
 
     except Exception as e:
-        st.error(f"ERROR LOGIN: {e}")
+        st.error(f"Error en el sistema de autenticación: {e}")
         return None
