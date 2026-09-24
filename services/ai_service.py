@@ -314,6 +314,39 @@ def top_modelos():
 
 
 # ==========================================
+# MODELOS CON MAYOR INCIDENCIA
+# ==========================================
+def modelos_mayor_incidencia():
+    detalles = (
+        supabase
+        .table("solicitud_detalle")
+        .select("modelo")
+        .execute()
+        .data
+    )
+    if not detalles:
+        return """
+🚨 MODELOS CON MÁS INCIDENCIAS
+No existen datos disponibles.
+"""
+    contador = Counter()
+    for fila in detalles:
+        modelo = fila.get("modelo")
+        if modelo:
+            contador[modelo] += 1
+    top = contador.most_common(10)
+    respuesta = (
+        "🚨 MODELOS CON MÁS INCIDENCIAS\n\n"
+    )
+    for modelo, cantidad in top:
+        respuesta += (
+            f"• {modelo}: "
+            f"{cantidad} incidencias\n"
+        )
+    return respuesta
+
+
+# ==========================================
 # TOP JEFATURAS
 # ==========================================
 
@@ -560,6 +593,15 @@ def responder_trade_ai(pregunta):
     if pregunta == "TOP MODELOS":
         return top_modelos()
 
+    if any(
+        x in pregunta
+        for x in [
+            "INCIDENCIA",
+            "INCIDENCIAS"
+        ]
+    ):
+        return modelos_mayor_incidencia()
+
     if pregunta == "TOP JEFATURAS":
         return top_jefaturas()
 
@@ -569,13 +611,20 @@ def responder_trade_ai(pregunta):
     if pregunta == "TOP GEC":
         return top_gec()
 
-    if pregunta == "TOP ASESORES":
+    if pregunta == "TOP ASESORES" or "ASESOR" in pregunta:
         return top_asesores()
 
-    if pregunta == "TOP RUTAS":
+    if pregunta == "TOP RUTAS" or "RUTA" in pregunta:
         return top_rutas()
 
-    if pregunta == "EFECTIVIDAD JEFATURAS" or pregunta == "EFECTIVIDAD":
+    if any(
+        x in pregunta
+        for x in [
+            "EFECTIVIDAD",
+            "DESEMPEÑO",
+            "JEFATURA"
+        ]
+    ):
         return efectividad_jefaturas()
 
     if pregunta == "INSIGHTS":
@@ -601,6 +650,7 @@ Comandos disponibles:
 • PRODUCTIVAS
 • IMPRODUCTIVAS
 • TOP MODELOS
+• INCIDENCIAS
 • TOP JEFATURAS
 • TOP CANALES
 • TOP GEC
