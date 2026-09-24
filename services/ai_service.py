@@ -389,6 +389,80 @@ def top_gec():
 
 
 # ==========================================
+# TOP ASESORES
+# ==========================================
+
+def top_asesores():
+    solicitudes = obtener_solicitudes()
+    contador = Counter()
+    for fila in solicitudes:
+        asesor = fila.get("asesor")
+        if asesor:
+            contador[asesor] += 1
+    top = contador.most_common(10)
+    respuesta = "🏆 TOP ASESORES\n\n"
+    for asesor, cantidad in top:
+        respuesta += (
+            f"• {asesor}: {cantidad}\n"
+        )
+    return respuesta
+
+
+# ==========================================
+# TOP RUTAS
+# ==========================================
+
+def top_rutas():
+    solicitudes = obtener_solicitudes()
+    contador = Counter()
+    for fila in solicitudes:
+        ruta = fila.get("ruta")
+        if ruta:
+            contador[ruta] += 1
+    top = contador.most_common(10)
+    respuesta = "🛣️ TOP RUTAS\n\n"
+    for ruta, cantidad in top:
+        respuesta += (
+            f"• {ruta}: {cantidad}\n"
+        )
+    return respuesta
+
+
+# ==========================================
+# EFECTIVIDAD POR JEFATURA
+# ==========================================
+
+def efectividad_jefaturas():
+    solicitudes = obtener_solicitudes()
+    resumen = {}
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+        if not jefatura:
+            continue
+        if jefatura not in resumen:
+            resumen[jefatura] = {
+                "total": 0,
+                "productivas": 0
+            }
+        resumen[jefatura]["total"] += 1
+        if fila.get("estatus") == "PRODUCTIVA":
+            resumen[jefatura]["productivas"] += 1
+    respuesta = "📈 EFECTIVIDAD POR JEFATURA\n\n"
+    for jefatura, datos in resumen.items():
+        total = datos["total"]
+        prod = datos["productivas"]
+        porcentaje = round(
+            (prod / total) * 100,
+            1
+        ) if total > 0 else 0
+        respuesta += (
+            f"• {jefatura}: "
+            f"{porcentaje}%\n"
+        )
+    return respuesta
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -495,6 +569,15 @@ def responder_trade_ai(pregunta):
     if pregunta == "TOP GEC":
         return top_gec()
 
+    if pregunta == "TOP ASESORES":
+        return top_asesores()
+
+    if pregunta == "TOP RUTAS":
+        return top_rutas()
+
+    if pregunta == "EFECTIVIDAD JEFATURAS" or pregunta == "EFECTIVIDAD":
+        return efectividad_jefaturas()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -521,6 +604,9 @@ Comandos disponibles:
 • TOP JEFATURAS
 • TOP CANALES
 • TOP GEC
+• TOP ASESORES
+• TOP RUTAS
+• EFECTIVIDAD JEFATURAS
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
