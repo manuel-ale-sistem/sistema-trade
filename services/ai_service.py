@@ -1,6 +1,18 @@
 from supabase_config import supabase
 import pandas as pd
+from collections import Counter
 
+
+
+def obtener_solicitudes():
+
+    return (
+        supabase
+        .table("solicitudes")
+        .select("*")
+        .execute()
+        .data
+    )
 
 def obtener_resumen_general():
 
