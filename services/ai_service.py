@@ -1,4 +1,5 @@
 from collections import Counter
+import streamlit as st
 from supabase_config import supabase
 
 
@@ -97,6 +98,11 @@ def buscar_folio(folio):
 
         datos = solicitud[0]
 
+        # MEMORIA DEL ÚLTIMO FOLIO
+        st.session_state[
+            "ultimo_folio_ai"
+        ] = folio
+
         historial = (
             supabase
             .table("historial")
@@ -133,6 +139,23 @@ Movimientos:
 
     except Exception as e:
         return f"Error: {e}"
+
+
+# ==========================================
+# CONSULTAR ÚLTIMO FOLIO EN MEMORIA
+# ==========================================
+
+def consultar_ultimo_folio():
+    folio = st.session_state.get(
+        "ultimo_folio_ai"
+    )
+    if not folio:
+        return """
+No tengo un folio en contexto.
+Primero consulta algo como:
+FOLIO TRD-000001
+"""
+    return buscar_folio(folio)
 
 
 # ==========================================
@@ -421,6 +444,9 @@ def responder_trade_ai(pregunta):
     if pregunta == "INSIGHTS":
         return generar_insights()
 
+    if pregunta == "ULTIMO FOLIO" or pregunta == "ÚLTIMO FOLIO":
+        return consultar_ultimo_folio()
+
     if "FOLIO" in pregunta:
         partes = pregunta.split()
 
@@ -442,5 +468,6 @@ Comandos disponibles:
 • TOP CANALES
 • TOP GEC
 • INSIGHTS
+• ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
 """
