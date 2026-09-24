@@ -638,10 +638,22 @@ def responder_trade_ai(pregunta):
     if pregunta == "TOP GEC":
         return top_gec()
 
-    if pregunta == "TOP ASESORES" or "ASESOR" in pregunta:
+    if any(
+        x in pregunta
+        for x in [
+            "ASESOR",
+            "ASESORES"
+        ]
+    ):
         return top_asesores()
 
-    if pregunta == "TOP RUTAS" or "RUTA" in pregunta:
+    if any(
+        x in pregunta
+        for x in [
+            "RUTA",
+            "RUTAS"
+        ]
+    ):
         return top_rutas()
 
     if any(
@@ -677,7 +689,7 @@ def responder_trade_ai(pregunta):
         partes = pregunta.split()
 
         for palabra in partes:
-            if palabra.startswith("TRD"):
+            if "TRD" in palabra:
                 return buscar_folio(palabra)
 
     return """
