@@ -37,6 +37,60 @@ def obtener_accesos():
     )
 
 
+def obtener_metricas():
+    solicitudes = obtener_solicitudes()
+    total = len(solicitudes)
+    abiertas = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ])
+    productivas = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+    improductivas = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "IMPRODUCTIVA"
+    ])
+    return {
+        "total": total,
+        "abiertas": abiertas,
+        "productivas": productivas,
+        "improductivas": improductivas
+    }
+
+
+def ultimos_folios():
+    try:
+        datos = (
+            supabase
+            .table("solicitudes")
+            .select(
+                "folio,negocio,estatus"
+            )
+            .order(
+                "fecha",
+                desc=True
+            )
+            .limit(5)
+            .execute()
+            .data
+        )
+        return datos
+    except Exception:
+        return []
+
+
 # ==========================================
 # RESUMEN GENERAL
 # ==========================================
