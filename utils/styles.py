@@ -115,6 +115,49 @@ def aplicar_estilos_globales():
             section[data-testid="stSidebar"] label {
                 color: #212529 !important;
             }
+
+            /* ==========================================
+               MENÚ DE NAVEGACIÓN LATERAL (Páginas / Radio)
+               ========================================== */
+            /* 1. Menú nativo de páginas */
+            [data-testid="stSidebarNav"] a {
+                color: #212529 !important;
+                border-radius: 6px !important;
+                padding: 8px 12px !important;
+                margin-bottom: 4px !important;
+                transition: all 0.2s ease-in-out !important;
+                font-weight: 500 !important;
+            }
+
+            [data-testid="stSidebarNav"] a:hover {
+                background-color: #f4f7fb !important;
+                color: #1b365d !important;
+            }
+
+            [data-testid="stSidebarNav"] a[aria-selected="true"],
+            [data-testid="stSidebarNav"] a.active {
+                background-color: #1b365d !important;
+                color: #ffffff !important;
+                font-weight: bold !important;
+            }
+
+            /* 2. Menú con st.radio en la barra lateral */
+            section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] label {
+                background-color: transparent !important;
+                border-radius: 6px !important;
+                padding: 6px 10px !important;
+                margin-bottom: 4px !important;
+                transition: background-color 0.2s ease-in-out;
+            }
+
+            section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] label:hover {
+                background-color: #f4f7fb !important;
+            }
+
+            section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] label span {
+                color: #212529 !important;
+                font-weight: 500 !important;
+            }
         </style>
         """,
         unsafe_allow_html=True
