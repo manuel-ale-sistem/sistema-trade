@@ -10,12 +10,17 @@ def aplicar_estilos_globales():
                ========================================== */
             .stApp {
                 background-color: #f8f9fa;
-                color: #212529 !important; /* Color de texto general oscuro y legible */
+                color: #212529 !important;
             }
 
-            /* Forzar color de texto en párrafos, etiquetas y textos generales */
-            p, span, label, div, .stMarkdown {
+            /* Forzar color de texto en elementos generales (EXCLUYENDO componentes flotantes de BaseWeb) */
+            p, label, .stMarkdown {
                 color: #212529;
+            }
+            
+            /* Textos generales seguros que no rompan menús desplegables */
+            span:not([data-baseweb]), div:not([data-baseweb]) {
+                color: inherit;
             }
 
             /* Tipografía y color global para títulos y encabezados */
@@ -25,21 +30,41 @@ def aplicar_estilos_globales():
             }
 
             /* ==========================================
-               BOTONES PRINCIPALES Y SECUNDARIOS
+               BOTONES MEJORADOS (st.button)
                ========================================== */
+            /* Botón Principal */
             .stButton > button {
                 background-color: #1b365d !important;
-                color: white !important;
-                border-radius: 6px !important;
-                border: none !important;
-                font-weight: bold !important;
-                padding: 0.5rem 1rem !important;
-                transition: background-color 0.2s ease-in-out;
+                color: #ffffff !important;
+                border-radius: 8px !important;
+                border: 1px solid #1b365d !important;
+                font-weight: 600 !important;
+                font-size: 0.95rem !important;
+                padding: 0.55rem 1.2rem !important;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+                transition: all 0.25s ease-in-out !important;
             }
 
+            /* Efecto Hover (cuando pasas el mouse) */
             .stButton > button:hover {
-                background-color: #336699 !important;
-                color: white !important;
+                background-color: #2c4d7e !important;
+                border-color: #2c4d7e !important;
+                color: #ffffff !important;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-1px);
+            }
+
+            /* Estado Activo / Clic */
+            .stButton > button:active {
+                background-color: #132743 !important;
+                transform: translateY(0px);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            }
+
+            /* Estado de Enfoque (Focus / Accesibilidad) */
+            .stButton > button:focus {
+                outline: none !important;
+                box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.3) !important;
             }
 
             /* ==========================================
@@ -73,6 +98,15 @@ def aplicar_estilos_globales():
             }
 
             /* ==========================================
+               COMBOBOX Y SELECTORES (st.selectbox / multiselect)
+               ========================================== */
+            [data-baseweb="popover"] div, 
+            [data-baseweb="menu"] div,
+            [data-baseweb="select"] span {
+                color: #212529 !important;
+            }
+
+            /* ==========================================
                BARRA LATERAL (SIDEBAR)
                ========================================== */
             section[data-testid="stSidebar"] {
@@ -81,7 +115,7 @@ def aplicar_estilos_globales():
             }
 
             section[data-testid="stSidebar"] p, 
-            section[data-testid="stSidebar"] span, 
+            section[data-testid="stSidebar"] span:not([data-baseweb]), 
             section[data-testid="stSidebar"] label {
                 color: #212529 !important;
             }
