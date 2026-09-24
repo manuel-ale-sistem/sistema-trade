@@ -9,7 +9,7 @@ def aplicar_estilos_globales():
                ESTILOS GENERALES Y FONDO
                ========================================== */
             .stApp {
-                background-color: #f8f9fa;
+                background-color: #f4f7fb; /* Fondo azulado sutil muy elegante */
                 color: #212529 !important;
             }
 
@@ -32,7 +32,6 @@ def aplicar_estilos_globales():
             /* ==========================================
                BOTONES MEJORADOS (st.button)
                ========================================== */
-            /* Botón Principal */
             .stButton > button {
                 background-color: #1b365d !important;
                 color: #ffffff !important;
@@ -45,7 +44,6 @@ def aplicar_estilos_globales():
                 transition: all 0.25s ease-in-out !important;
             }
 
-            /* Efecto Hover (cuando pasas el mouse) */
             .stButton > button:hover {
                 background-color: #2c4d7e !important;
                 border-color: #2c4d7e !important;
@@ -54,14 +52,12 @@ def aplicar_estilos_globales():
                 transform: translateY(-1px);
             }
 
-            /* Estado Activo / Clic */
             .stButton > button:active {
                 background-color: #132743 !important;
                 transform: translateY(0px);
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
             }
 
-            /* Estado de Enfoque (Focus / Accesibilidad) */
             .stButton > button:focus {
                 outline: none !important;
                 box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.3) !important;
@@ -110,7 +106,7 @@ def aplicar_estilos_globales():
                BARRA LATERAL (SIDEBAR)
                ========================================== */
             section[data-testid="stSidebar"] {
-                background-color: #ffffff;
+                background-color: #ffffff; /* Mantiene la barra lateral blanca para generar contraste interno */
                 border-right: 1px solid #e0e0e0;
             }
 
