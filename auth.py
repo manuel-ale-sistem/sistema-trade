@@ -2,6 +2,8 @@ import bcrypt
 import streamlit as st
 from supabase_config import supabase
 from services.accesos_service import registrar_acceso
+
+# Consulta inicial de prueba (opcional)
 response = (
     supabase.table("usuarios")
     .select("*")
@@ -9,6 +11,7 @@ response = (
 )
 
 st.write("TODOS LOS USUARIOS:", response.data)
+
 def verificar_password(password, password_hash):
     return bcrypt.checkpw(
         password.encode("utf-8"),
@@ -17,9 +20,7 @@ def verificar_password(password, password_hash):
 
 
 def login(usuario, password):
-
     try:
-
         response = (
             supabase.table("usuarios")
             .select("*")
