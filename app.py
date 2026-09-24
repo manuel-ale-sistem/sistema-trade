@@ -181,9 +181,9 @@ elif menu == "Accesos":
     from pages.accesos import accesos
     accesos()
 
-elif menu == "Asistente IA":
-    from pages.ia_asistente import ia_asistente
-    ia_asistente()
+elif menu == "Trade AI":
+    from pages.trade_ai import trade_ai
+    trade_ai()
 
 # ==========================================
 # PIE
