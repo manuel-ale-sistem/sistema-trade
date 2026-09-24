@@ -1,6 +1,6 @@
 [theme]
 base = "light"
 primaryColor = "#1b365d"
-backgroundColor = "#f4f7fb"          # Este es el fondo azulado muy sutil que elegimos
+backgroundColor = "#f3f7f5"         # Este es el fondo verde muy sutil que elegimos
 secondaryBackgroundColor = "#ffffff" # Color para tarjetas, entradas y barra lateral
 textColor = "#212529"
