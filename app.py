@@ -124,12 +124,14 @@ menu_admin = [
     "Catalogos",
     "Historial",
     "Reportes",
-    "Accesos"
+    "Accesos",
+    "Trade AI"
 ]
 
 menu_usuario = [
     "Captura",
-    "Consultas"
+    "Consultas",
+    "Trade AI"
 ]
 
 # ==========================================
@@ -178,6 +180,10 @@ elif menu == "Reportes":
 elif menu == "Accesos":
     from pages.accesos import accesos
     accesos()
+
+elif menu == "Trade AI":
+    from pages.trade_ai import trade_ai
+    trade_ai()
 
 # ==========================================
 # PIE
