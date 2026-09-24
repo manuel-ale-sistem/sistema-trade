@@ -3,9 +3,7 @@ import pandas as pd
 from collections import Counter
 
 
-
 def obtener_solicitudes():
-
     return (
         supabase
         .table("solicitudes")
@@ -14,10 +12,28 @@ def obtener_solicitudes():
         .data
     )
 
+
+def solicitudes_abiertas():
+    solicitudes = obtener_solicitudes()
+
+    abiertas = [
+        s
+        for s in solicitudes
+        if s.get("estatus") not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ]
+
+    return f"""📂 SOLICITUDES ABIERTAS
+
+Total:
+{len(abiertas)}"""
+
+
 def obtener_resumen_general():
-
     try:
-
         solicitudes = (
             supabase
             .table("solicitudes")
@@ -50,13 +66,11 @@ def obtener_resumen_general():
             [
                 s
                 for s in solicitudes
-                if s.get("estatus")
-                not in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]
+                if s.get("estatus") not in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]
             ]
         )
 
-        return f"""
-📊 RESUMEN TRADE
+        return f"""📊 RESUMEN TRADE
 
 Solicitudes Totales: {total_solicitudes}
 
@@ -68,14 +82,11 @@ Accesos Registrados: {total_accesos}
 """
 
     except Exception as e:
-
         return f"Error: {e}"
 
 
 def buscar_folio(folio):
-
     try:
-
         solicitud = (
             supabase
             .table("solicitudes")
@@ -86,7 +97,6 @@ def buscar_folio(folio):
         )
 
         if not solicitud:
-
             return f"No encontré el folio {folio}"
 
         datos = solicitud[0]
@@ -100,8 +110,7 @@ def buscar_folio(folio):
             .data
         )
 
-        respuesta = f"""
-📋 FOLIO: {folio}
+        respuesta = f"""📋 FOLIO: {folio}
 
 Estatus: {datos.get("estatus")}
 
@@ -119,32 +128,23 @@ Movimientos registrados: {len(movimientos)}
         return respuesta
 
     except Exception as e:
-
         return f"Error: {e}"
 
 
 def responder_trade_ai(pregunta):
-
     pregunta = pregunta.upper().strip()
 
     if "RESUMEN" in pregunta:
-
         return obtener_resumen_general()
 
     if "FOLIO" in pregunta:
-
         partes = pregunta.split()
 
         for palabra in partes:
-
             if palabra.startswith("TRD"):
+                return buscar_folio(palabra)
 
-                return buscar_folio(
-                    palabra
-                )
-
-    return """
-🤖 Trade AI
+    return """🤖 Trade AI
 
 Puedes preguntar:
 
