@@ -462,6 +462,33 @@ def top_rutas():
 
 
 # ==========================================
+# TOP USUARIOS CAPTURISTAS
+# ==========================================
+def top_usuarios():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+👨‍💼 TOP USUARIOS
+No existen datos disponibles.
+"""
+    contador = Counter()
+    for fila in solicitudes:
+        usuario = fila.get("usuario")
+        if usuario:
+            contador[usuario] += 1
+    top = contador.most_common(10)
+    respuesta = (
+        "👨‍💼 TOP USUARIOS CAPTURISTAS\n\n"
+    )
+    for usuario, cantidad in top:
+        respuesta += (
+            f"• {usuario}: "
+            f"{cantidad} solicitudes\n"
+        )
+    return respuesta
+
+
+# ==========================================
 # EFECTIVIDAD POR JEFATURA
 # ==========================================
 
@@ -620,6 +647,19 @@ def responder_trade_ai(pregunta):
     if any(
         x in pregunta
         for x in [
+            "USUARIO",
+            "USUARIOS",
+            "CAPTURA",
+            "CAPTURAS",
+            "CAPTURISTA",
+            "CAPTURISTAS"
+        ]
+    ):
+        return top_usuarios()
+
+    if any(
+        x in pregunta
+        for x in [
             "EFECTIVIDAD",
             "DESEMPEÑO",
             "JEFATURA"
@@ -656,6 +696,7 @@ Comandos disponibles:
 • TOP GEC
 • TOP ASESORES
 • TOP RUTAS
+• TOP USUARIOS
 • EFECTIVIDAD JEFATURAS
 • INSIGHTS
 • ÚLTIMO FOLIO
