@@ -6,10 +6,10 @@ def aplicar_estilos_globales():
         """
         <style>
             /* ==========================================
-               ESTILOS GENERALES Y FONDO
+               ESTILOS GENERALES Y FONDO FORZADO
                ========================================== */
-            .stApp {
-                background-color: #f4f7fb; /* Fondo azulado sutil muy elegante */
+            .stApp, [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
+                background-color: #f4f7fb !important;
                 color: #212529 !important;
             }
 
@@ -106,7 +106,7 @@ def aplicar_estilos_globales():
                BARRA LATERAL (SIDEBAR)
                ========================================== */
             section[data-testid="stSidebar"] {
-                background-color: #ffffff; /* Mantiene la barra lateral blanca para generar contraste interno */
+                background-color: #ffffff;
                 border-right: 1px solid #e0e0e0;
             }
 
