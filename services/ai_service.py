@@ -1,9 +1,14 @@
-from supabase_config import supabase
-import pandas as pd
 from collections import Counter
 
+from supabase_config import supabase
+
+
+# ==========================================
+# OBTENER DATOS
+# ==========================================
 
 def obtener_solicitudes():
+
     return (
         supabase
         .table("solicitudes")
@@ -13,149 +18,80 @@ def obtener_solicitudes():
     )
 
 
-def top_jefaturas():
-    solicitudes = obtener_solicitudes()
-    contador = Counter()
+def obtener_historial():
 
-    for fila in solicitudes:
-        jefatura = fila.get("jefatura")
-        if jefatura:
-            contador[jefatura] += 1
-
-    top = contador.most_common(5)
-    respuesta = "🏆 TOP JEFATURAS\n\n"
-
-    for nombre, cantidad in top:
-        respuesta += f"- {nombre}: {cantidad} solicitudes\n"
-
-    return respuesta
-
-
-def top_modelos():
-    try:
-        detalles = (
-            supabase
-            .table("solicitud_detalle")
-            .select("modelo")
-            .execute()
-            .data
-        )
-
-        contador = Counter()
-        for fila in detalles:
-            modelo = fila.get("modelo")
-            if modelo:
-                contador[modelo] += 1
-
-        top = contador.most_common(5)
-        respuesta = "🏆 TOP MODELOS\n\n"
-
-        for modelo, cantidad in top:
-            respuesta += f"- {modelo}: {cantidad}\n"
-
-        return respuesta
-    except Exception as e:
-        return f"Error al consultar modelos: {e}"
-
-
-def solicitudes_improductivas():
-    solicitudes = obtener_solicitudes()
-    total = len(
-        [
-            s
-            for s in solicitudes
-            if s.get("estatus") == "IMPRODUCTIVA"
-        ]
+    return (
+        supabase
+        .table("historial")
+        .select("*")
+        .execute()
+        .data
     )
 
-    return f"""❌ SOLICITUDES IMPRODUCTIVAS
 
-Total: {total}
-"""
+def obtener_accesos():
 
-
-def solicitudes_productivas():
-    solicitudes = obtener_solicitudes()
-    total = len(
-        [
-            s
-            for s in solicitudes
-            if s.get("estatus") == "PRODUCTIVA"
-        ]
+    return (
+        supabase
+        .table("accesos")
+        .select("*")
+        .execute()
+        .data
     )
 
-    return f"""✅ SOLICITUDES PRODUCTIVAS
 
-Total: {total}
-"""
-
-
-def solicitudes_abiertas():
-    solicitudes = obtener_solicitudes()
-    abiertas = [
-        s
-        for s in solicitudes
-        if s.get("estatus") not in [
-            "PRODUCTIVA",
-            "IMPRODUCTIVA",
-            "CERRADA"
-        ]
-    ]
-
-    return f"""📂 SOLICITUDES ABIERTAS
-
-Total: {len(abiertas)}"""
-
+# ==========================================
+# RESUMEN GENERAL
+# ==========================================
 
 def obtener_resumen_general():
+
     try:
+
         solicitudes = obtener_solicitudes()
-        
-        historial = (
-            supabase
-            .table("historial")
-            .select("*")
-            .execute()
-            .data
-        )
+        historial = obtener_historial()
+        accesos = obtener_accesos()
 
-        accesos = (
-            supabase
-            .table("accesos")
-            .select("*")
-            .execute()
-            .data
-        )
-
-        total_solicitudes = len(solicitudes)
-        total_historial = len(historial)
-        total_accesos = len(accesos)
-
-        abiertas = len(
-            [
-                s
-                for s in solicitudes
-                if s.get("estatus") not in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]
+        abiertas = [
+            s
+            for s in solicitudes
+            if s.get("estatus")
+            not in [
+                "PRODUCTIVA",
+                "IMPRODUCTIVA",
+                "CERRADA"
             ]
-        )
+        ]
 
-        return f"""📊 RESUMEN TRADE
+        return f"""
+📊 RESUMEN TRADE
 
-Solicitudes Totales: {total_solicitudes}
+Solicitudes Totales:
+{len(solicitudes)}
 
-Solicitudes Abiertas: {abiertas}
+Solicitudes Abiertas:
+{len(abiertas)}
 
-Movimientos Historial: {total_historial}
+Movimientos Historial:
+{len(historial)}
 
-Accesos Registrados: {total_accesos}
+Accesos Registrados:
+{len(accesos)}
 """
 
     except Exception as e:
+
         return f"Error: {e}"
 
 
+# ==========================================
+# BUSQUEDA DE FOLIOS
+# ==========================================
+
 def buscar_folio(folio):
+
     try:
+
         solicitud = (
             supabase
             .table("solicitudes")
@@ -166,11 +102,14 @@ def buscar_folio(folio):
         )
 
         if not solicitud:
-            return f"No encontré el folio {folio}"
+
+            return (
+                f"No encontré el folio {folio}"
+            )
 
         datos = solicitud[0]
 
-        movimientos = (
+        historial = (
             supabase
             .table("historial")
             .select("*")
@@ -179,62 +118,303 @@ def buscar_folio(folio):
             .data
         )
 
-        respuesta = f"""📋 FOLIO: {folio}
+        return f"""
+📋 FOLIO
 
-Estatus: {datos.get("estatus")}
+Folio:
+{folio}
 
-Negocio: {datos.get("negocio")}
+Estatus:
+{datos.get("estatus")}
 
-Canal: {datos.get("canal")}
+Negocio:
+{datos.get("negocio")}
 
-GEC: {datos.get("gec")}
+Canal:
+{datos.get("canal")}
 
-Usuario: {datos.get("usuario")}
+GEC:
+{datos.get("gec")}
 
-Movimientos registrados: {len(movimientos)}
+Usuario:
+{datos.get("usuario")}
+
+Movimientos:
+{len(historial)}
 """
 
-        return respuesta
-
     except Exception as e:
+
         return f"Error: {e}"
 
 
+# ==========================================
+# ABIERTAS
+# ==========================================
+
+def solicitudes_abiertas():
+
+    solicitudes = obtener_solicitudes()
+
+    abiertas = [
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]
+    ]
+
+    return f"""
+📂 SOLICITUDES ABIERTAS
+
+Total:
+{len(abiertas)}
+"""
+
+
+# ==========================================
+# PRODUCTIVAS
+# ==========================================
+
+def solicitudes_productivas():
+
+    solicitudes = obtener_solicitudes()
+
+    total = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+
+    return f"""
+✅ PRODUCTIVAS
+
+Total:
+{total}
+"""
+
+
+# ==========================================
+# IMPRODUCTIVAS
+# ==========================================
+
+def solicitudes_improductivas():
+
+    solicitudes = obtener_solicitudes()
+
+    total = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "IMPRODUCTIVA"
+    ])
+
+    return f"""
+❌ IMPRODUCTIVAS
+
+Total:
+{total}
+"""
+
+
+# ==========================================
+# TOP MODELOS
+# ==========================================
+
+def top_modelos():
+
+    detalles = (
+        supabase
+        .table("solicitud_detalle")
+        .select("modelo")
+        .execute()
+        .data
+    )
+
+    contador = Counter()
+
+    for fila in detalles:
+
+        modelo = fila.get("modelo")
+
+        if modelo:
+
+            contador[modelo] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP MODELOS\n\n"
+
+    for modelo, cantidad in top:
+
+        respuesta += (
+            f"• {modelo}: {cantidad}\n"
+        )
+
+    return respuesta
+
+
+# ==========================================
+# TOP JEFATURAS
+# ==========================================
+
+def top_jefaturas():
+
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+
+        valor = fila.get("jefatura")
+
+        if valor:
+
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP JEFATURAS\n\n"
+
+    for nombre, cantidad in top:
+
+        respuesta += (
+            f"• {nombre}: {cantidad}\n"
+        )
+
+    return respuesta
+
+
+# ==========================================
+# TOP CANALES
+# ==========================================
+
+def top_canales():
+
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+
+        valor = fila.get("canal")
+
+        if valor:
+
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP CANALES\n\n"
+
+    for nombre, cantidad in top:
+
+        respuesta += (
+            f"• {nombre}: {cantidad}\n"
+        )
+
+    return respuesta
+
+
+# ==========================================
+# TOP GEC
+# ==========================================
+
+def top_gec():
+
+    solicitudes = obtener_solicitudes()
+
+    contador = Counter()
+
+    for fila in solicitudes:
+
+        valor = fila.get("gec")
+
+        if valor:
+
+            contador[valor] += 1
+
+    top = contador.most_common(10)
+
+    respuesta = "🏆 TOP GEC\n\n"
+
+    for nombre, cantidad in top:
+
+        respuesta += (
+            f"• {nombre}: {cantidad}\n"
+        )
+
+    return respuesta
+
+
+# ==========================================
+# RESPONDER IA
+# ==========================================
+
 def responder_trade_ai(pregunta):
+
     pregunta = pregunta.upper().strip()
 
-    if "RESUMEN" in pregunta:
+    if pregunta == "RESUMEN":
+
         return obtener_resumen_general()
 
-    if "ABIERTAS" in pregunta:
+    if pregunta == "ABIERTAS":
+
         return solicitudes_abiertas()
 
-    if "PRODUCTIVAS" in pregunta and "IMPRODUCTIVAS" not in pregunta:
+    if pregunta == "PRODUCTIVAS":
+
         return solicitudes_productivas()
 
-    if "IMPRODUCTIVAS" in pregunta:
+    if pregunta == "IMPRODUCTIVAS":
+
         return solicitudes_improductivas()
 
-    if "JEFATURAS" in pregunta or "TOP JEFATURAS" in pregunta:
-        return top_jefaturas()
+    if pregunta == "TOP MODELOS":
 
-    if "MODELOS" in pregunta or "TOP MODELOS" in pregunta:
         return top_modelos()
 
+    if pregunta == "TOP JEFATURAS":
+
+        return top_jefaturas()
+
+    if pregunta == "TOP CANALES":
+
+        return top_canales()
+
+    if pregunta == "TOP GEC":
+
+        return top_gec()
+
     if "FOLIO" in pregunta:
+
         partes = pregunta.split()
+
         for palabra in partes:
+
             if palabra.startswith("TRD"):
-                return buscar_folio(palabra)
 
-    return """🤖 Trade AI - ¿Qué deseas consultar?
+                return buscar_folio(
+                    palabra
+                )
 
-Puedes preguntar:
-- RESUMEN
-- ABIERTAS
-- PRODUCTIVAS
-- IMPRODUCTIVAS
-- TOP JEFATURAS
-- TOP MODELOS
-- FOLIO TRD-XXXXX
+    return """
+🤖 TRADE AI
+
+Comandos disponibles:
+
+• RESUMEN
+• ABIERTAS
+• PRODUCTIVAS
+• IMPRODUCTIVAS
+• TOP MODELOS
+• TOP JEFATURAS
+• TOP CANALES
+• TOP GEC
+• FOLIO TRD-XXXXXX
 """
