@@ -90,6 +90,10 @@ Muéstrame los indicadores.
 Muéstrame las alertas operativas.
 ¿Qué solicitudes llevan más de 7 días?
 Solicitudes atrasadas.
+¿Qué solicitudes están aumentando?
+Muéstrame las tendencias.
+¿Cuáles son las solicitudes más frecuentes?
+¿Qué categoría tiene mayor crecimiento?
 FOLIO TRD-XXXXXX
 """
     )
