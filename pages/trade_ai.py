@@ -11,11 +11,22 @@ def trade_ai():
         "🤖 Trade AI Assistant"
     )
 
+    st.success(
+        """
+Bienvenido a Trade AI.
+Puedes consultar información operativa,
+folios, estadísticas e indicadores
+del sistema Trade.
+"""
+    )
+
     st.info(
         """
 Comandos disponibles:
 
 RESUMEN
+
+INSIGHTS
 
 ABIERTAS
 
@@ -34,6 +45,44 @@ TOP GEC
 FOLIO TRD-XXXXXX
 """
     )
+
+    # ==========================================
+    # BOTONES RÁPIDOS
+    # ==========================================
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📊 RESUMEN", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "RESUMEN",
+                    responder_trade_ai("RESUMEN")
+                )
+            )
+
+    with col2:
+        if st.button("🤖 INSIGHTS", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "INSIGHTS",
+                    responder_trade_ai("INSIGHTS")
+                )
+            )
+
+    with col3:
+        if st.button("📂 ABIERTAS", use_container_width=True):
+            if "chat_trade_ai" not in st.session_state:
+                st.session_state["chat_trade_ai"] = []
+            st.session_state.chat_trade_ai.append(
+                (
+                    "ABIERTAS",
+                    responder_trade_ai("ABIERTAS")
+                )
+            )
 
     if (
         "chat_trade_ai"
