@@ -13,20 +13,36 @@ def trade_ai():
 
     st.info(
         """
-🤖 Ejemplos
+Comandos disponibles:
+
 RESUMEN
+
 ABIERTAS
+
 PRODUCTIVAS
+
 IMPRODUCTIVAS
+
 TOP MODELOS
+
 TOP JEFATURAS
+
+TOP CANALES
+
+TOP GEC
+
 FOLIO TRD-XXXXXX
 """
     )
 
-    if "chat_trade_ai" not in st.session_state:
+    if (
+        "chat_trade_ai"
+        not in st.session_state
+    ):
 
-        st.session_state.chat_trade_ai = []
+        st.session_state[
+            "chat_trade_ai"
+        ] = []
 
     pregunta = st.chat_input(
         "Pregunta algo sobre Trade..."
@@ -34,11 +50,15 @@ FOLIO TRD-XXXXXX
 
     if pregunta:
 
-        respuesta = responder_trade_ai(
-            pregunta
+        respuesta = (
+            responder_trade_ai(
+                pregunta
+            )
         )
 
-        st.session_state.chat_trade_ai.append(
+        st.session_state[
+            "chat_trade_ai"
+        ].append(
             (
                 pregunta,
                 respuesta
@@ -46,13 +66,23 @@ FOLIO TRD-XXXXXX
         )
 
     for pregunta, respuesta in reversed(
-        st.session_state.chat_trade_ai
+        st.session_state[
+            "chat_trade_ai"
+        ]
     ):
 
-        with st.chat_message("user"):
+        with st.chat_message(
+            "user"
+        ):
 
-            st.write(pregunta)
+            st.write(
+                pregunta
+            )
 
-        with st.chat_message("assistant"):
+        with st.chat_message(
+            "assistant"
+        ):
 
-            st.write(respuesta)
+            st.write(
+                respuesta
+            )
