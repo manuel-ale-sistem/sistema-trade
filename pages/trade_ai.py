@@ -81,6 +81,9 @@ Estatus: {fila['estatus']}
 ¿Cuántas solicitudes abiertas hay?
 Dame un resumen general.
 ¿Cuál es el modelo más solicitado?
+¿Qué modelo presenta más incidencias?
+¿Qué modelos tienen más fallas?
+Muéstrame incidencias.
 ¿Qué jefatura tiene más solicitudes?
 Muéstrame los indicadores.
 FOLIO TRD-XXXXXX
