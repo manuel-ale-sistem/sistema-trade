@@ -6,7 +6,9 @@ def guardar_historial(
     usuario: str,
     accion: str
 ) -> None:
+
     try:
+
         supabase.table(
             "historial"
         ).insert(
@@ -18,6 +20,7 @@ def guardar_historial(
         ).execute()
 
     except Exception as e:
+
         print(
             f"Error guardando historial: {e}"
         )
