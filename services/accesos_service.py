@@ -6,7 +6,9 @@ def registrar_acceso(
     accion: str,
     ip: str = ""
 ) -> None:
+
     try:
+
         supabase.table(
             "accesos"
         ).insert(
@@ -18,6 +20,7 @@ def registrar_acceso(
         ).execute()
 
     except Exception as e:
+
         print(
             f"Error registrando acceso: {e}"
         )
