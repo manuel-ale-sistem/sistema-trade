@@ -1,4 +1,5 @@
 from collections import Counter
+from datetime import datetime
 import streamlit as st
 from supabase_config import supabase
 
@@ -523,6 +524,64 @@ def efectividad_jefaturas():
 
 
 # ==========================================
+# SOLICITUDES CRÍTICAS
+# ==========================================
+
+def solicitudes_criticas():
+    solicitudes = obtener_solicitudes()
+    respuesta = (
+        "🚨 SOLICITUDES CRÍTICAS\n\n"
+    )
+    encontradas = 0
+    for fila in solicitudes:
+        estatus = fila.get(
+            "estatus",
+            ""
+        )
+        if estatus in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]:
+            continue
+        fecha = fila.get(
+            "fecha",
+            ""
+        )
+        if not fecha:
+            continue
+        try:
+            fecha_sol = datetime.strptime(
+                fecha[:10],
+                "%Y-%m-%d"
+            )
+            dias = (
+                datetime.now()
+                - fecha_sol
+            ).days
+            if dias >= 7:
+                encontradas += 1
+                respuesta += (
+                    f"• {fila.get('folio')} "
+                    f"| {fila.get('negocio', 'N/D')} "
+                    f"| {dias} días\n"
+                )
+        except Exception:
+            continue
+    if encontradas == 0:
+        return """
+✅ ALERTAS OPERATIVAS
+No existen solicitudes críticas.
+Todas las solicitudes abiertas
+tienen menos de 7 días.
+"""
+    respuesta += (
+        f"\nTotal críticas: {encontradas}"
+    )
+    return respuesta
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -679,6 +738,23 @@ def responder_trade_ai(pregunta):
     ):
         return efectividad_jefaturas()
 
+    if any(
+        x in pregunta
+        for x in [
+            "CRITICA",
+            "CRITICAS",
+            "CRÍTICA",
+            "CRÍTICAS",
+            "ALERTA",
+            "ALERTAS",
+            "ATRASADA",
+            "ATRASADAS",
+            "PENDIENTE",
+            "PENDIENTES"
+        ]
+    ):
+        return solicitudes_criticas()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -710,6 +786,8 @@ Comandos disponibles:
 • TOP RUTAS
 • TOP USUARIOS
 • EFECTIVIDAD JEFATURAS
+• SOLICITUDES CRÍTICAS
+• ALERTAS
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
