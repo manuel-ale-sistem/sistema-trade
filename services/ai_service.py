@@ -2,6 +2,7 @@ from collections import Counter
 from datetime import datetime
 import re
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 from supabase_config import supabase
 
@@ -1187,7 +1188,6 @@ def exportar_consulta(pregunta):
         index=False
     )
     
-    # Botón de descarga directa en Streamlit
     st.download_button(
         "⬇️ Descargar Reporte",
         data=open(
@@ -1206,6 +1206,104 @@ def exportar_consulta(pregunta):
         f"{nombre_archivo}\n"
         f"Registros: {len(df)}"
     )
+
+
+# ==========================================
+# GRAFICA JEFATURAS
+# ==========================================
+def grafica_jefaturas():
+    solicitudes = obtener_solicitudes()
+    contador = Counter()
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+        if jefatura:
+            contador[jefatura] += 1
+    df = pd.DataFrame(
+        contador.items(),
+        columns=[
+            "Jefatura",
+            "Solicitudes"
+        ]
+    )
+    fig = px.bar(
+        df,
+        x="Jefatura",
+        y="Solicitudes",
+        title="Solicitudes por Jefatura"
+    )
+    return fig
+
+
+# ==========================================
+# GRAFICA CANALES
+# ==========================================
+def grafica_canales():
+    solicitudes = obtener_solicitudes()
+    contador = Counter()
+    for fila in solicitudes:
+        canal = fila.get("canal")
+        if canal:
+            contador[canal] += 1
+    df = pd.DataFrame(
+        contador.items(),
+        columns=[
+            "Canal",
+            "Solicitudes"
+        ]
+    )
+    fig = px.pie(
+        df,
+        names="Canal",
+        values="Solicitudes",
+        title="Distribución por Canal"
+    )
+    return fig
+
+
+# ==========================================
+# GRAFICA MODELOS
+# ==========================================
+def grafica_modelos():
+    detalles = (
+        supabase
+        .table("solicitud_detalle")
+        .select("modelo")
+        .execute()
+        .data
+    )
+    contador = Counter()
+    for fila in detalles:
+        modelo = fila.get("modelo")
+        if modelo:
+            contador[modelo] += 1
+    df = pd.DataFrame(
+        contador.items(),
+        columns=[
+            "Modelo",
+            "Total"
+        ]
+    )
+    fig = px.bar(
+        df,
+        x="Modelo",
+        y="Total",
+        title="Top Modelos"
+    )
+    return fig
+
+
+# ==========================================
+# DASHBOARD EJECUTIVO
+# ==========================================
+def dashboard_ejecutivo():
+    metricas = obtener_metricas()
+    return {
+        "total": metricas["total"],
+        "abiertas": metricas["abiertas"],
+        "productivas": metricas["productivas"],
+        "improductivas": metricas["improductivas"],
+        "criticas": total_criticas()
+    }
 
 
 # ==========================================
@@ -1383,9 +1481,6 @@ def responder_trade_ai(pregunta):
             if "TRD" in palabra:
                 return buscar_folio(palabra)
 
-    # ==========================================
-    # EXPORTACIÓN
-    # ==========================================
     if any(
         x in pregunta
         for x in [
@@ -1399,9 +1494,6 @@ def responder_trade_ai(pregunta):
             pregunta
         )
 
-    # ==========================================
-    # DETALLE OPERATIVO
-    # ==========================================
     if any(
         x in pregunta
         for x in [
@@ -1419,7 +1511,6 @@ def responder_trade_ai(pregunta):
         if detalle:
             return detalle
 
-    # Motor dinámico automático con normalización y muestra de folios
     resultado_dinamico = procesar_consulta_dinamica(pregunta)
     if resultado_dinamico:
         return resultado_dinamico
