@@ -1472,6 +1472,188 @@ def grafica_comparativo(
 
 
 # ==========================================
+# RIESGO OPERATIVO
+# ==========================================
+def riesgo_operativo():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+🚨 RIESGO OPERATIVO
+No existen datos suficientes.
+"""
+    resumen = {}
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+        if not jefatura:
+            continue
+        if jefatura not in resumen:
+            resumen[jefatura] = {
+                "total": 0,
+                "abiertas": 0,
+                "criticas": 0,
+                "productivas": 0
+            }
+        resumen[jefatura]["total"] += 1
+        estatus = fila.get(
+            "estatus",
+            ""
+        )
+        if estatus == "PRODUCTIVA":
+            resumen[jefatura][
+                "productivas"
+            ] += 1
+        if estatus not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]:
+            resumen[jefatura][
+                "abiertas"
+            ] += 1
+            try:
+                fecha = fila.get(
+                    "fecha",
+                    ""
+                )
+                if fecha:
+                    dias = (
+                        datetime.now()
+                        -
+                        datetime.strptime(
+                            fecha[:10],
+                            "%Y-%m-%d"
+                        )
+                    ).days
+                    if dias >= 7:
+                        resumen[jefatura][
+                            "criticas"
+                        ] += 1
+            except Exception:
+                pass
+    respuesta = (
+        "🚨 RIESGO OPERATIVO\n\n"
+    )
+    ranking = []
+    for jefatura, datos in resumen.items():
+        total = datos["total"]
+        efectividad = round(
+            (
+                datos["productivas"]
+                / total
+            ) * 100,
+            1
+        ) if total else 0
+        score = (
+            datos["abiertas"]
+            +
+            (datos["criticas"] * 2)
+        )
+        if efectividad < 70:
+            score += 5
+        ranking.append(
+            (
+                score,
+                jefatura,
+                efectividad,
+                datos
+            )
+        )
+    ranking.sort(
+        reverse=True
+    )
+    for (
+        score,
+        jefatura,
+        efectividad,
+        datos
+    ) in ranking[:5]:
+        if score >= 15:
+            nivel = "🔴 ALTO"
+        elif score >= 8:
+            nivel = "🟠 MEDIO"
+        else:
+            nivel = "🟢 BAJO"
+        respuesta += f"""
+{jefatura}
+Riesgo:
+{nivel}
+• Abiertas:
+{datos["abiertas"]}
+• Críticas:
+{datos["criticas"]}
+• Efectividad:
+{efectividad}%
+---------------------
+"""
+    return respuesta
+
+
+# ==========================================
+# DIAGNÓSTICO EJECUTIVO
+# ==========================================
+def diagnostico_ejecutivo():
+    metricas = obtener_metricas()
+    total = metricas["total"]
+    productivas = metricas[
+        "productivas"
+    ]
+    efectividad = round(
+        (
+            productivas / total
+        ) * 100,
+        1
+    ) if total else 0
+    criticas = total_criticas()
+    lider = jefatura_lider()
+    diagnostico = f"""
+🤖 DIAGNÓSTICO EJECUTIVO
+📊 Situación General
+Solicitudes:
+{total}
+Abiertas:
+{metricas["abiertas"]}
+Críticas:
+{criticas}
+Efectividad:
+{efectividad}%
+🏆 Liderazgo Operativo
+{lider}
+"""
+    if criticas > 10:
+        diagnostico += """
+🚨 Observación
+Existe acumulación importante
+de solicitudes críticas.
+Se recomienda priorizar
+atención inmediata.
+"""
+    elif criticas > 0:
+        diagnostico += """
+⚠️ Observación
+Existen solicitudes críticas
+que deben monitorearse.
+"""
+    else:
+        diagnostico += """
+✅ Observación
+No se detectan atrasos
+operativos importantes.
+"""
+    if efectividad < 70:
+        diagnostico += """
+📉 Riesgo
+La efectividad se encuentra
+por debajo del objetivo.
+"""
+    else:
+        diagnostico += """
+📈 Desempeño
+La efectividad es favorable.
+"""
+    return diagnostico
+
+
+# ==========================================
 # DASHBOARD EJECUTIVO
 # ==========================================
 def dashboard_ejecutivo():
@@ -1644,6 +1826,33 @@ def responder_trade_ai(pregunta):
         return comparativo_inteligente(
             pregunta
         )
+
+    # ==========================================
+    # RIESGO OPERATIVO
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "RIESGO",
+            "RIESGOS",
+            "RIESGO OPERATIVO"
+        ]
+    ):
+        return riesgo_operativo()
+
+    # ==========================================
+    # DIAGNOSTICO
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "DIAGNOSTICO",
+            "DIAGNÓSTICO",
+            "DIAGNOSTICO EJECUTIVO",
+            "ESTADO OPERATIVO"
+        ]
+    ):
+        return diagnostico_ejecutivo()
 
     resultado_dinamico = procesar_consulta_dinamica(pregunta)
     if resultado_dinamico:
