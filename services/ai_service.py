@@ -1277,6 +1277,201 @@ def grafica_modelos():
 
 
 # ==========================================
+# COMPARATIVO INTELIGENTE
+# ==========================================
+def comparativo_inteligente(pregunta):
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+📊 COMPARATIVO
+No existen datos suficientes.
+"""
+    pregunta = pregunta.upper()
+    campos = [
+        "jefatura",
+        "ruta",
+        "canal",
+        "asesor"
+    ]
+    for campo in campos:
+        valores = list({
+            str(
+                fila.get(campo, "")
+            ).upper()
+            for fila in solicitudes
+            if fila.get(campo)
+        })
+        encontrados = []
+        for valor in valores:
+            if valor in pregunta:
+                encontrados.append(valor)
+        if len(encontrados) >= 2:
+            valor1 = encontrados[0]
+            valor2 = encontrados[1]
+            total1 = len([
+                s for s in solicitudes
+                if str(
+                    s.get(campo, "")
+                ).upper() == valor1
+            ])
+            total2 = len([
+                s for s in solicitudes
+                if str(
+                    s.get(campo, "")
+                ).upper() == valor2
+            ])
+            productivas1 = len([
+                s for s in solicitudes
+                if (
+                    str(
+                        s.get(campo, "")
+                    ).upper() == valor1
+                    and
+                    s.get("estatus")
+                    == "PRODUCTIVA"
+                )
+            ])
+            productivas2 = len([
+                s for s in solicitudes
+                if (
+                    str(
+                        s.get(campo, "")
+                    ).upper() == valor2
+                    and
+                    s.get("estatus")
+                    == "PRODUCTIVA"
+                )
+            ])
+            abiertas1 = len([
+                s for s in solicitudes
+                if (
+                    str(
+                        s.get(campo, "")
+                    ).upper() == valor1
+                    and
+                    s.get("estatus")
+                    not in [
+                        "PRODUCTIVA",
+                        "IMPRODUCTIVA",
+                        "CERRADA"
+                    ]
+                )
+            ])
+            abiertas2 = len([
+                s for s in solicitudes
+                if (
+                    str(
+                        s.get(campo, "")
+                    ).upper() == valor2
+                    and
+                    s.get("estatus")
+                    not in [
+                        "PRODUCTIVA",
+                        "IMPRODUCTIVA",
+                        "CERRADA"
+                    ]
+                )
+            ])
+            efectividad1 = round(
+                (
+                    productivas1 / total1
+                ) * 100,
+                1
+            ) if total1 > 0 else 0
+            efectividad2 = round(
+                (
+                    productivas2 / total2
+                ) * 100,
+                1
+            ) if total2 > 0 else 0
+            mejor = (
+                valor1
+                if efectividad1 >= efectividad2
+                else valor2
+            )
+            return f"""
+📊 COMPARATIVO INTELIGENTE
+Campo:
+{campo.upper()}
+━━━━━━━━━━━━━━
+{valor1}
+• Solicitudes:
+{total1}
+• Productivas:
+{productivas1}
+• Abiertas:
+{abiertas1}
+• Efectividad:
+{efectividad1}%
+━━━━━━━━━━━━━━
+{valor2}
+• Solicitudes:
+{total2}
+• Productivas:
+{productivas2}
+• Abiertas:
+{abiertas2}
+• Efectividad:
+{efectividad2}%
+━━━━━━━━━━━━━━
+🏆 Mejor desempeño:
+{mejor}
+"""
+    return """
+📊 COMPARATIVO
+No encontré dos elementos
+válidos para comparar.
+Ejemplos:
+• Cuernavaca vs Cuautla
+• Six vs Tradicional
+• Ruta 5 vs Ruta 8
+"""
+
+
+# ==========================================
+# GRAFICA COMPARATIVO
+# ==========================================
+def grafica_comparativo(
+    valor1,
+    valor2,
+    campo
+):
+    solicitudes = obtener_solicitudes()
+    total1 = len([
+        s
+        for s in solicitudes
+        if str(
+            s.get(campo, "")
+        ).upper() == valor1.upper()
+    ])
+    total2 = len([
+        s
+        for s in solicitudes
+        if str(
+            s.get(campo, "")
+        ).upper() == valor2.upper()
+    ])
+    df = pd.DataFrame({
+        campo: [
+            valor1,
+            valor2
+        ],
+        "Solicitudes": [
+            total1,
+            total2
+        ]
+    })
+    fig = px.bar(
+        df,
+        x=campo,
+        y="Solicitudes",
+        color=campo,
+        title=f"{valor1} vs {valor2}"
+    )
+    return fig
+
+
+# ==========================================
 # DASHBOARD EJECUTIVO
 # ==========================================
 def dashboard_ejecutivo():
@@ -1436,82 +1631,22 @@ def responder_trade_ai(pregunta):
     ):
         return alertas_inteligentes()
 
-    if any(
-        x in pregunta
-        for x in [
-            "ANALISIS",
-            "ANÁLISIS",
-            "ANALISTA",
-            "OPERACION",
-            "OPERACIÓN",
-            "RIESGOS",
-            "QUE ESTA PASANDO",
-            "QUÉ ESTÁ PASANDO",
-            "QUE DEBO REVISAR",
-            "QUÉ DEBO REVISAR"
-        ]
+    # ==========================================
+    # COMPARATIVOS
+    # ==========================================
+    if (
+        " VS " in pregunta
+        or
+        "COMPARA" in pregunta
+        or
+        "COMPARAR" in pregunta
     ):
-        return analista_trade()
-
-    if pregunta == "INSIGHTS":
-        return generar_insights()
-
-    if pregunta == "ULTIMO FOLIO" or pregunta == "ÚLTIMO FOLIO":
-        return consultar_ultimo_folio()
-
-    if "FOLIO" in pregunta:
-        partes = pregunta.split()
-        for palabra in partes:
-            if "TRD" in palabra:
-                return buscar_folio(palabra)
-
-    if any(
-        x in pregunta
-        for x in [
-            "MOSTRAR",
-            "MUESTRA",
-            "MUESTRAME",
-            "MUÉSTRAME",
-            "DETALLE",
-            "FOLIOS"
-        ]
-    ):
-        detalle = detalle_operativo(
+        return comparativo_inteligente(
             pregunta
         )
-        if detalle:
-            return detalle
 
     resultado_dinamico = procesar_consulta_dinamica(pregunta)
     if resultado_dinamico:
         return resultado_dinamico
 
-    return """
-🤖 TRADE AI
-
-Comandos disponibles:
-
-• RESUMEN
-• RESUMEN EJECUTIVO
-• ABIERTAS
-• PRODUCTIVAS
-• IMPRODUCTIVAS
-• TOP MODELOS
-• INCIDENCIAS
-• TOP JEFATURAS
-• TOP CANALES
-• TOP GEC
-• TOP ASESORES
-• TOP RUTAS
-• TOP USUARIOS
-• EFECTIVIDAD JEFATURAS
-• SOLICITUDES CRÍTICAS
-• ALERTAS / ALERTAS INTELIGENTES
-• ANALISIS / ANALISTA
-• TENDENCIAS
-• RANKING / LÍDERES
-• INSIGHTS
-• ÚLTIMO FOLIO
-• FOLIO TRD-XXXXXX
-• O pregunta directamente: "Exportar Ruta 12", "¿Cuántas tiene Jojutla?", etc.
-"""
+    return "No comprendí tu consulta. Escribe 'RESUMEN' o consulta un folio."
