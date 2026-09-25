@@ -1107,6 +1107,15 @@ def detalle_operativo(pregunta):
                 break
     if not resultados:
         return None
+    
+    resultados = sorted(
+        resultados,
+        key=lambda x: str(
+            x.get("fecha", "")
+        ),
+        reverse=True
+    )
+    
     respuesta = (
         "📋 DETALLE OPERATIVO\n\n"
     )
@@ -1255,6 +1264,8 @@ def grafica_modelos():
         .execute()
         .data
     )
+    if not detalles:
+        return None
     contador = Counter()
     for fila in detalles:
         modelo = fila.get("modelo")
@@ -1650,6 +1661,12 @@ por debajo del objetivo.
 📈 Desempeño
 La efectividad es favorable.
 """
+    
+    diagnostico += f"""
+========================
+🚨 RIESGO OPERATIVO
+{riesgo_operativo()}
+"""
     return diagnostico
 
 
@@ -1784,8 +1801,7 @@ def responder_trade_ai(pregunta):
             "RANKING",
             "LIDER",
             "LÍDER",
-            "DESEMPEÑO GENERAL",
-            "OPERATIVO"
+            "DESEMPEÑO GENERAL"
         ]
     ):
         return ranking_operativo()
@@ -1805,7 +1821,6 @@ def responder_trade_ai(pregunta):
         for x in [
             "ALERTA INTELIGENTE",
             "ALERTAS INTELIGENTES",
-            "RIESGOS",
             "ANOMALIAS",
             "ANOMALÍAS",
             "MONITOREO"
@@ -1817,7 +1832,7 @@ def responder_trade_ai(pregunta):
     # COMPARATIVOS
     # ==========================================
     if (
-        " VS " in pregunta
+        "VS" in pregunta
         or
         "COMPARA" in pregunta
         or
@@ -1853,6 +1868,95 @@ def responder_trade_ai(pregunta):
         ]
     ):
         return diagnostico_ejecutivo()
+
+    # ==========================================
+    # ANALISTA TRADE
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "ANALISIS",
+            "ANÁLISIS",
+            "ANALISTA",
+            "OPERACION",
+            "OPERACIÓN",
+            "QUE ESTA PASANDO",
+            "QUÉ ESTÁ PASANDO",
+            "QUE DEBO REVISAR",
+            "QUÉ DEBO REVISAR"
+        ]
+    ):
+        return analista_trade()
+
+    # ==========================================
+    # INSIGHTS
+    # ==========================================
+    if pregunta == "INSIGHTS":
+        return generar_insights()
+
+    # ==========================================
+    # ÚLTIMO FOLIO
+    # ==========================================
+    if (
+        pregunta == "ULTIMO FOLIO"
+        or
+        pregunta == "ÚLTIMO FOLIO"
+    ):
+        return consultar_ultimo_folio()
+
+    # ==========================================
+    # BUSCAR FOLIO
+    # ==========================================
+    if "FOLIO" in pregunta:
+        partes = pregunta.split()
+        for palabra in partes:
+            if "TRD" in palabra:
+                return buscar_folio(
+                    palabra
+                )
+
+    # ==========================================
+    # EXPORTACIÓN
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "EXPORTA",
+            "EXPORTAR",
+            "REPORTE",
+            "EXCEL"
+        ]
+    ):
+        resultado_exp = obtener_datos_exportacion(pregunta)
+        if not resultado_exp:
+            return "No se encontraron datos para exportar."
+        return f"""
+📁 REPORTE EXCEL GENERADO
+Archivo:
+{resultado_exp["archivo"]}
+Total de registros:
+{resultado_exp["registros"]}
+"""
+
+    # ==========================================
+    # DETALLE OPERATIVO
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "MOSTRAR",
+            "MUESTRA",
+            "MUESTRAME",
+            "MUÉSTRAME",
+            "DETALLE",
+            "FOLIOS"
+        ]
+    ):
+        detalle = detalle_operativo(
+            pregunta
+        )
+        if detalle:
+            return detalle
 
     resultado_dinamico = procesar_consulta_dinamica(pregunta)
     if resultado_dinamico:
