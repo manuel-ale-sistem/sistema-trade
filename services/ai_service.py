@@ -718,6 +718,112 @@ def ranking_operativo():
 
 
 # ==========================================
+# MODELO LÍDER
+# ==========================================
+def modelo_lider():
+    detalles = (
+        supabase
+        .table("solicitud_detalle")
+        .select("modelo")
+        .execute()
+        .data
+    )
+    if not detalles:
+        return "N/D"
+    contador = Counter()
+    for fila in detalles:
+        modelo = fila.get("modelo")
+        if modelo:
+            contador[modelo] += 1
+    lider = contador.most_common(1)
+    if not lider:
+        return "N/D"
+    return lider[0][0]
+
+
+# ==========================================
+# TOTAL CRÍTICAS
+# ==========================================
+def total_criticas():
+    solicitudes = obtener_solicitudes()
+    total = 0
+    for fila in solicitudes:
+        estatus = fila.get(
+            "estatus",
+            ""
+        )
+        if estatus in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]:
+            continue
+        fecha = fila.get(
+            "fecha",
+            ""
+        )
+        if not fecha:
+            continue
+        try:
+            fecha_sol = datetime.strptime(
+                fecha[:10],
+                "%Y-%m-%d"
+            )
+            dias = (
+                datetime.now()
+                - fecha_sol
+            ).days
+            if dias >= 7:
+                total += 1
+        except Exception:
+            pass
+    return total
+
+
+# ==========================================
+# RESUMEN EJECUTIVO
+# ==========================================
+def resumen_ejecutivo():
+    metricas = obtener_metricas()
+    modelo = modelo_lider()
+    criticas = total_criticas()
+    solicitudes = obtener_solicitudes()
+    total = len(solicitudes)
+    productivas = metricas[
+        "productivas"
+    ]
+    eficiencia = 0
+    if total > 0:
+        eficiencia = round(
+            (
+                productivas /
+                total
+            ) * 100,
+            1
+        )
+    return f"""
+🤖 RESUMEN EJECUTIVO TRADE
+📋 Solicitudes Totales:
+{metricas["total"]}
+📂 Solicitudes Abiertas:
+{metricas["abiertas"]}
+🚨 Solicitudes Críticas:
+{criticas}
+✅ Productivas:
+{metricas["productivas"]}
+❌ Improductivas:
+{metricas["improductivas"]}
+📈 Efectividad:
+{eficiencia}%
+🏆 Modelo Líder:
+{modelo}
+{jefatura_lider()}
+{asesor_lider()}
+{ruta_lider()}
+"""
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -917,6 +1023,16 @@ def responder_trade_ai(pregunta):
     ):
         return ranking_operativo()
 
+    if any(
+        x in pregunta
+        for x in [
+            "EJECUTIVO",
+            "RESUMEN EJECUTIVO",
+            "DASHBOARD EJECUTIVO"
+        ]
+    ):
+        return resumen_ejecutivo()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -936,6 +1052,7 @@ def responder_trade_ai(pregunta):
 Comandos disponibles:
 
 • RESUMEN
+• RESUMEN EJECUTIVO
 • ABIERTAS
 • PRODUCTIVAS
 • IMPRODUCTIVAS
