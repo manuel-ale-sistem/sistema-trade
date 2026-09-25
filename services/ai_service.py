@@ -824,6 +824,78 @@ def resumen_ejecutivo():
 
 
 # ==========================================
+# ALERTAS INTELIGENTES
+# ==========================================
+def alertas_inteligentes():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+🤖 ALERTAS INTELIGENTES
+No existen datos suficientes.
+"""
+    alertas = []
+    # -------------------------
+    # Solicitudes críticas
+    # -------------------------
+    criticas = total_criticas()
+    if criticas > 0:
+        alertas.append(
+            f"🚨 Existen {criticas} solicitudes "
+            f"críticas con más de 7 días."
+        )
+    # -------------------------
+    # Efectividad general
+    # -------------------------
+    total = len(solicitudes)
+    productivas = len([
+        s
+        for s in solicitudes
+        if s.get("estatus")
+        == "PRODUCTIVA"
+    ])
+    if total > 0:
+        efectividad = round(
+            (productivas / total) * 100,
+            1
+        )
+        if efectividad < 70:
+            alertas.append(
+                f"⚠️ La efectividad general es "
+                f"{efectividad}%."
+            )
+    # -------------------------
+    # Jefatura más cargada
+    # -------------------------
+    contador = Counter()
+    for fila in solicitudes:
+        jefatura = fila.get(
+            "jefatura"
+        )
+        if jefatura:
+            contador[jefatura] += 1
+    lider = contador.most_common(1)
+    if lider:
+        alertas.append(
+            f"📊 La jefatura con mayor carga "
+            f"es {lider[0][0]} "
+            f"con {lider[0][1]} solicitudes."
+        )
+    # -------------------------
+    # Resultado
+    # -------------------------
+    if not alertas:
+        return """
+✅ ALERTAS INTELIGENTES
+No se detectaron anomalías.
+"""
+    
+    respuesta = "🤖 ALERTAS INTELIGENTES\n\n"
+    for alerta in alertas:
+        respuesta += f"{alerta}\n"
+    return respuesta
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -970,7 +1042,6 @@ def responder_trade_ai(pregunta):
     ):
         return top_usuarios()
 
-    # Corrección aplicada aquí para evitar conflicto con "JEFATURA"
     if any(
         x in pregunta
         for x in [
@@ -1033,6 +1104,22 @@ def responder_trade_ai(pregunta):
     ):
         return resumen_ejecutivo()
 
+    # ==========================================
+    # ALERTAS INTELIGENTES
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "ALERTA INTELIGENTE",
+            "ALERTAS INTELIGENTES",
+            "RIESGOS",
+            "ANOMALIAS",
+            "ANOMALÍAS",
+            "MONITOREO"
+        ]
+    ):
+        return alertas_inteligentes()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -1066,7 +1153,7 @@ Comandos disponibles:
 • TOP USUARIOS
 • EFECTIVIDAD JEFATURAS
 • SOLICITUDES CRÍTICAS
-• ALERTAS
+• ALERTAS / ALERTAS INTELIGENTES
 • TENDENCIAS
 • RANKING / LÍDERES
 • INSIGHTS
