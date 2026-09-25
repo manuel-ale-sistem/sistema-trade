@@ -1,6 +1,7 @@
 from collections import Counter
 from datetime import datetime
 import re
+import pandas as pd
 import streamlit as st
 from supabase_config import supabase
 
@@ -1130,6 +1131,84 @@ def detalle_operativo(pregunta):
 
 
 # ==========================================
+# EXPORTACIÓN INTELIGENTE
+# ==========================================
+def exportar_consulta(pregunta):
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "No existen datos para exportar."
+    pregunta = pregunta.upper()
+    campos = [
+        "jefatura",
+        "ruta",
+        "canal",
+        "gec",
+        "asesor",
+        "usuario"
+    ]
+    resultados = []
+    for campo in campos:
+        valores = set()
+        for fila in solicitudes:
+            valor = fila.get(campo)
+            if valor:
+                valores.add(
+                    str(valor).upper()
+                )
+        for valor in valores:
+            if valor in pregunta:
+                for fila in solicitudes:
+                    dato = str(
+                        fila.get(campo, "")
+                    ).upper()
+                    if valor not in dato:
+                        continue
+                    if "ABIERTA" in pregunta or "ABIERTAS" in pregunta:
+                        if fila.get("estatus") in [
+                            "PRODUCTIVA",
+                            "IMPRODUCTIVA",
+                            "CERRADA"
+                        ]:
+                            continue
+                    if "PRODUCTIVA" in pregunta:
+                        if fila.get("estatus") != "PRODUCTIVA":
+                            continue
+                    resultados.append(fila)
+                break
+    if not resultados:
+        return "No encontré registros para exportar."
+    df = pd.DataFrame(resultados)
+    nombre_archivo = (
+        f"reporte_trade_"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    )
+    df.to_excel(
+        nombre_archivo,
+        index=False
+    )
+    
+    # Botón de descarga directa en Streamlit
+    st.download_button(
+        "⬇️ Descargar Reporte",
+        data=open(
+            nombre_archivo,
+            "rb"
+        ).read(),
+        file_name=nombre_archivo,
+        mime=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
+    return (
+        f"✅ Reporte generado: "
+        f"{nombre_archivo}\n"
+        f"Registros: {len(df)}"
+    )
+
+
+# ==========================================
 # RESPONDER IA
 # ==========================================
 
@@ -1305,6 +1384,22 @@ def responder_trade_ai(pregunta):
                 return buscar_folio(palabra)
 
     # ==========================================
+    # EXPORTACIÓN
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "EXPORTA",
+            "EXPORTAR",
+            "REPORTE",
+            "EXCEL"
+        ]
+    ):
+        return exportar_consulta(
+            pregunta
+        )
+
+    # ==========================================
     # DETALLE OPERATIVO
     # ==========================================
     if any(
@@ -1356,5 +1451,5 @@ Comandos disponibles:
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
-• O pregunta directamente: "¿Cuántas tiene Jojutla?", "Muéstrame detalle de Ruta 12", etc.
+• O pregunta directamente: "Exportar Ruta 12", "¿Cuántas tiene Jojutla?", etc.
 """
