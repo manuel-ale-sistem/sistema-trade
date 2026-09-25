@@ -1,5 +1,6 @@
 from collections import Counter
 from datetime import datetime
+import re
 import streamlit as st
 from supabase_config import supabase
 
@@ -834,18 +835,12 @@ def alertas_inteligentes():
 No existen datos suficientes.
 """
     alertas = []
-    # -------------------------
-    # Solicitudes críticas
-    # -------------------------
     criticas = total_criticas()
     if criticas > 0:
         alertas.append(
             f"🚨 Existen {criticas} solicitudes "
             f"críticas con más de 7 días."
         )
-    # -------------------------
-    # Efectividad general
-    # -------------------------
     total = len(solicitudes)
     productivas = len([
         s
@@ -863,9 +858,6 @@ No existen datos suficientes.
                 f"⚠️ La efectividad general es "
                 f"{efectividad}%."
             )
-    # -------------------------
-    # Jefatura más cargada
-    # -------------------------
     contador = Counter()
     for fila in solicitudes:
         jefatura = fila.get(
@@ -880,9 +872,6 @@ No existen datos suficientes.
             f"es {lider[0][0]} "
             f"con {lider[0][1]} solicitudes."
         )
-    # -------------------------
-    # Resultado
-    # -------------------------
     if not alertas:
         return """
 ✅ ALERTAS INTELIGENTES
@@ -1011,99 +1000,59 @@ Efectividad Operativa:
 
 
 # ==========================================
-# CONSULTAS DINÁMICAS
+# CONSULTAS DINÁMICAS INTELIGENTES (MEJORADAS)
 # ==========================================
-def consultar_por_campo(
-    campo,
-    valor,
-    estatus=None
-):
+def procesar_consulta_dinamica(pregunta):
     solicitudes = obtener_solicitudes()
-    resultados = []
-    for fila in solicitudes:
-        dato = str(
-            fila.get(campo, "")
-        ).upper()
-        if valor.upper() in dato:
-            if estatus:
-                if (
-                    fila.get("estatus")
-                    != estatus
-                ):
+    if not solicitudes:
+        return None
+    
+    # Normalización con regex para limpiar signos de puntuación y acentos extras
+    pregunta_limpia = re.sub(
+        r"[^A-Z0-9ÁÉÍÓÚÑ ]",
+        "",
+        pregunta.upper()
+    )
+    
+    campos_a_revisar = ["jefatura", "ruta", "canal", "gec", "asesor", "usuario"]
+    palabras_ignorar = {"CUANTAS", "SOLICITUDES", "TIENE", "EL", "LA", "LOS", "LAS", "DE", "DEL", "EN", "UN", "UNA", "CANAL", "RUTA", "JEFATURA"}
+    tokens = [p for p in pregunta_limpia.split() if p not in palabras_ignorar]
+    
+    termino_busqueda = " ".join(tokens)
+    if not termino_busqueda:
+        return None
+
+    for campo in campos_a_revisar:
+        resultados = []
+        for fila in solicitudes:
+            valor_campo = str(fila.get(campo, "")).upper()
+            if termino_busqueda in valor_campo or any(t in valor_campo for t in tokens):
+                if "PRODUCTIVA" in pregunta and fila.get("estatus") != "PRODUCTIVA":
                     continue
-            resultados.append(fila)
-    return len(resultados)
+                resultados.append(fila)
+        
+        if resultados:
+            tipo_etiqueta = campo.upper()
+            # Extracción de hasta 5 folios de ejemplo
+            folios = [
+                str(r.get("folio"))
+                for r in resultados[:5]
+                if r.get("folio")
+            ]
+            folios_texto = "\n".join([f"• {f}" for f in folios]) if folios else "• N/D"
 
-
-def consultar_jefatura(nombre):
-    total = consultar_por_campo(
-        "jefatura",
-        nombre
-    )
-    return f"""
-📊 JEFATURA
-Nombre:
-{nombre}
-Solicitudes:
-{total}
+            return f"""
+📊 CONSULTA DINÁMICA
+Campo:
+{tipo_etiqueta}
+Término:
+{termino_busqueda.title()}
+Total Solicitudes:
+{len(resultados)}
+Folios ejemplo:
+{folios_texto}
 """
-
-
-def consultar_canal(nombre):
-    total = consultar_por_campo(
-        "canal",
-        nombre
-    )
-    return f"""
-📊 CANAL
-Canal:
-{nombre}
-Solicitudes:
-{total}
-"""
-
-
-def consultar_gec(nombre):
-    total = consultar_por_campo(
-        "gec",
-        nombre
-    )
-    return f"""
-📊 GEC
-Categoría:
-{nombre}
-Solicitudes:
-{total}
-"""
-
-
-def consultar_ruta(nombre):
-    total = consultar_por_campo(
-        "ruta",
-        nombre
-    )
-    return f"""
-🛣️ RUTA
-Ruta:
-{nombre}
-Solicitudes:
-{total}
-"""
-
-
-def productivas_jefatura(nombre):
-    total = consultar_por_campo(
-        "jefatura",
-        nombre,
-        "PRODUCTIVA"
-    )
-    return f"""
-✅ PRODUCTIVAS
-Jefatura:
-{nombre}
-Total:
-{total}
-"""
+    return None
 
 
 # ==========================================
@@ -1161,7 +1110,7 @@ def responder_trade_ai(pregunta):
             "RUTA",
             "RUTAS"
         ]
-    ):
+    ) and "CUANTAS" not in pregunta:
         return top_rutas()
 
     if any(
@@ -1239,9 +1188,6 @@ def responder_trade_ai(pregunta):
     ):
         return resumen_ejecutivo()
 
-    # ==========================================
-    # ALERTAS INTELIGENTES
-    # ==========================================
     if any(
         x in pregunta
         for x in [
@@ -1255,9 +1201,6 @@ def responder_trade_ai(pregunta):
     ):
         return alertas_inteligentes()
 
-    # ==========================================
-    # ANALISTA TRADE
-    # ==========================================
     if any(
         x in pregunta
         for x in [
@@ -1281,49 +1224,16 @@ def responder_trade_ai(pregunta):
     if pregunta == "ULTIMO FOLIO" or pregunta == "ÚLTIMO FOLIO":
         return consultar_ultimo_folio()
 
-    # =============================
-    # CONSULTAS CUERNAVACA
-    # =============================
-    if "CUERNAVACA" in pregunta:
-        if "PRODUCTIVA" in pregunta:
-            return productivas_jefatura(
-                "CUERNAVACA"
-            )
-        return consultar_jefatura(
-            "CUERNAVACA"
-        )
-    # =============================
-    # CONSULTAS CUAUTLA
-    # =============================
-    if "CUAUTLA" in pregunta:
-        if "PRODUCTIVA" in pregunta:
-            return productivas_jefatura(
-                "CUAUTLA"
-            )
-        return consultar_jefatura(
-            "CUAUTLA"
-        )
-    # =============================
-    # SIX
-    # =============================
-    if "SIX" in pregunta:
-        return consultar_canal(
-            "SIX"
-        )
-    # =============================
-    # ORO
-    # =============================
-    if "ORO" in pregunta:
-        return consultar_gec(
-            "ORO"
-        )
-
     if "FOLIO" in pregunta:
         partes = pregunta.split()
-
         for palabra in partes:
             if "TRD" in palabra:
                 return buscar_folio(palabra)
+
+    # Motor dinámico automático con normalización y muestra de folios
+    resultado_dinamico = procesar_consulta_dinamica(pregunta)
+    if resultado_dinamico:
+        return resultado_dinamico
 
     return """
 🤖 TRADE AI
@@ -1352,4 +1262,5 @@ Comandos disponibles:
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
+• O pregunta directamente: "¿Cuántas tiene Jojutla?", "¿Ruta 12?", etc.
 """
