@@ -896,6 +896,45 @@ No se detectaron anomalías.
 
 
 # ==========================================
+# ANALISTA TRADE IA
+# ==========================================
+def analista_trade():
+    metricas = obtener_metricas()
+    alertas = alertas_inteligentes()
+    insights = generar_insights()
+    ranking = ranking_operativo()
+    return f"""
+🤖 ANALISTA TRADE
+========================
+📊 RESUMEN
+Solicitudes Totales:
+{metricas["total"]}
+Solicitudes Abiertas:
+{metricas["abiertas"]}
+✅ Productivas:
+{metricas["productivas"]}
+❌ Improductivas:
+{metricas["improductivas"]}
+========================
+🚨 ALERTAS
+{alertas}
+========================
+📈 INSIGHTS
+{insights}
+========================
+🏆 RANKING
+{ranking}
+========================
+✅ RECOMENDACIONES
+• Revisar solicitudes críticas.
+• Monitorear la jefatura con mayor carga.
+• Dar seguimiento a solicitudes abiertas.
+• Revisar modelos con mayor incidencia.
+• Evaluar efectividad operativa periódicamente.
+"""
+
+
+# ==========================================
 # INSIGHTS
 # ==========================================
 
@@ -1120,6 +1159,26 @@ def responder_trade_ai(pregunta):
     ):
         return alertas_inteligentes()
 
+    # ==========================================
+    # ANALISTA TRADE
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "ANALISIS",
+            "ANÁLISIS",
+            "ANALISTA",
+            "OPERACION",
+            "OPERACIÓN",
+            "RIESGOS",
+            "QUE ESTA PASANDO",
+            "QUÉ ESTÁ PASANDO",
+            "QUE DEBO REVISAR",
+            "QUÉ DEBO REVISAR"
+        ]
+    ):
+        return analista_trade()
+
     if pregunta == "INSIGHTS":
         return generar_insights()
 
@@ -1154,6 +1213,7 @@ Comandos disponibles:
 • EFECTIVIDAD JEFATURAS
 • SOLICITUDES CRÍTICAS
 • ALERTAS / ALERTAS INTELIGENTES
+• ANALISIS / ANALISTA
 • TENDENCIAS
 • RANKING / LÍDERES
 • INSIGHTS
