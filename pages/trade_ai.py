@@ -4,7 +4,8 @@ from services.ai_service import (
     obtener_metricas,
     ultimos_folios,
     generar_insights,
-    resumen_ejecutivo
+    resumen_ejecutivo,
+    alertas_inteligentes
 )
 
 
@@ -61,6 +62,17 @@ del sistema Trade.
         )
 
     # ==========================================
+    # ALERTAS INTELIGENTES
+    # ==========================================
+    with st.expander(
+        "🚨 Alertas Inteligentes",
+        expanded=True
+    ):
+        st.warning(
+            alertas_inteligentes()
+        )
+
+    # ==========================================
     # INSIGHTS AUTOMATICOS
     # ==========================================
     with st.expander(
@@ -100,6 +112,10 @@ Muéstrame incidencias.
 Muéstrame los indicadores.
 ¿Hay solicitudes críticas?
 Muéstrame las alertas operativas.
+Muéstrame las alertas inteligentes.
+¿Qué riesgos existen?
+¿Hay anomalías operativas?
+Monitoreo operativo.
 ¿Qué solicitudes llevan más de 7 días?
 Solicitudes atrasadas.
 ¿Qué solicitudes están aumentando?
