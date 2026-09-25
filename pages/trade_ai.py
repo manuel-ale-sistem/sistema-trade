@@ -3,7 +3,8 @@ from services.ai_service import (
     responder_trade_ai,
     obtener_metricas,
     ultimos_folios,
-    generar_insights
+    generar_insights,
+    resumen_ejecutivo
 )
 
 
@@ -46,6 +47,17 @@ del sistema Trade.
         st.metric(
             "❌ Improductivas",
             metricas["improductivas"]
+        )
+
+    # ==========================================
+    # RESUMEN EJECUTIVO IA
+    # ==========================================
+    with st.expander(
+        "🤖 Resumen Ejecutivo IA",
+        expanded=True
+    ):
+        st.success(
+            resumen_ejecutivo()
         )
 
     # ==========================================
