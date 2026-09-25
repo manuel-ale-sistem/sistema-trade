@@ -10,8 +10,6 @@ from pathlib import Path
 from datetime import datetime
 from pypdf import PdfReader
 
-# Funciones de guardado migradas a Supabase (eliminado guardar_especificaciones de aquí)
-
 from utils.folios import (
     generar_folio
 )
@@ -422,72 +420,14 @@ def captura_form():
                         "Imagen no disponible"
                     )
 
+            # Nota: Se eliminó completamente el bloque de st.metric de la Ficha Técnica para que no aparezca con N/D.
+            # Si solo deseas descargarlo o ver el botón del PDF, se mantiene abajo:
+
             if ruta_pdf:
-                catalogo_id = int(
-                    modelo_info.iloc[0]["id"]
+                st.link_button(
+                    "📄 Descargar Ficha Técnica",
+                    ruta_pdf
                 )
-
-                detalle = obtener_especificaciones(
-                    catalogo_id
-                )
-
-                if not detalle.empty:
-                    datos_pdf = detalle.iloc[0]
-                else:
-                    texto_pdf = leer_pdf(ruta_pdf)
-                    datos_pdf = extraer_datos_pdf(texto_pdf)
-                    if datos_pdf:
-                        guardar_especificaciones(
-                            catalogo_id,
-                            datos_pdf
-                        )
-
-                if 'datos_pdf' in locals() and not isinstance(datos_pdf, pd.Series) or (isinstance(datos_pdf, pd.Series) and not datos_pdf.empty):
-                    st.markdown(
-                        "### 📋 Ficha Técnica"
-                    )
-
-                    col_m1, col_m2, col_m3 = st.columns(3)
-
-                    with col_m1:
-                        st.metric(
-                            "Capacidad",
-                            datos_pdf.get("capacidad", "N/D")
-                        )
-                        st.metric(
-                            "Puertas",
-                            datos_pdf.get("puertas", "N/D")
-                        )
-
-                    with col_m2:
-                        st.metric(
-                            "Voltaje",
-                            datos_pdf.get("voltaje", "N/D")
-                        )
-                        st.metric(
-                            "Refrigerante",
-                            datos_pdf.get("refrigerante", "N/D")
-                        )
-
-                    with col_m3:
-                        st.metric(
-                            "Consumo",
-                            datos_pdf.get("consumo", "N/D")
-                        )
-                        st.metric(
-                            "Temperatura",
-                            datos_pdf.get("temperatura", "N/D")
-                        )
-
-                if ruta_pdf:
-                    st.link_button(
-                        "📄 Descargar Ficha Técnica",
-                        ruta_pdf
-                    )
-                else:
-                    st.warning(
-                        "PDF no disponible"
-                    )
 
     # CANTIDAD
     if tipo_req in [
@@ -662,7 +602,6 @@ def captura_form():
         try:
             folio = generar_folio()
 
-            # Insertar solicitud principal en Supabase
             supabase.table("solicitudes").insert(
                 {
                     "folio": folio,
@@ -688,7 +627,6 @@ def captura_form():
                 }
             ).execute()
 
-            # Insertar requerimientos (detalles)
             for req in st.session_state.requerimientos:
                 guardar_detalle_solicitud(
                     folio=folio,
@@ -704,7 +642,6 @@ def captura_form():
                     capacidad_solicitada=req.get("capacidad_solicitada", "")
                 )
 
-            # Insertar documentos / evidencias usando Supabase Storage
             if documentos:
                 for archivo in documentos:
                     resultado = subir_archivo(
@@ -728,7 +665,6 @@ def captura_form():
                         }
                     ).execute()
 
-            # Guardar en el historial de acciones
             guardar_historial(
                 folio,
                 st.session_state["usuario"],
