@@ -1132,12 +1132,12 @@ def detalle_operativo(pregunta):
 
 
 # ==========================================
-# EXPORTACIÓN INTELIGENTE
+# EXPORTACIÓN DE DATOS (LÓGICA DE NEGOCIO)
 # ==========================================
-def exportar_consulta(pregunta):
+def obtener_datos_exportacion(pregunta):
     solicitudes = obtener_solicitudes()
     if not solicitudes:
-        return "No existen datos para exportar."
+        return None, "No existen datos para exportar."
     pregunta = pregunta.upper()
     campos = [
         "jefatura",
@@ -1177,35 +1177,15 @@ def exportar_consulta(pregunta):
                     resultados.append(fila)
                 break
     if not resultados:
-        return "No encontré registros para exportar."
+        return None, "No encontré registros para exportar."
+    
     df = pd.DataFrame(resultados)
     nombre_archivo = (
         f"reporte_trade_"
         f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     )
-    df.to_excel(
-        nombre_archivo,
-        index=False
-    )
     
-    st.download_button(
-        "⬇️ Descargar Reporte",
-        data=open(
-            nombre_archivo,
-            "rb"
-        ).read(),
-        file_name=nombre_archivo,
-        mime=(
-            "application/vnd.openxmlformats-officedocument."
-            "spreadsheetml.sheet"
-        )
-    )
-
-    return (
-        f"✅ Reporte generado: "
-        f"{nombre_archivo}\n"
-        f"Registros: {len(df)}"
-    )
+    return df, nombre_archivo
 
 
 # ==========================================
@@ -1480,19 +1460,6 @@ def responder_trade_ai(pregunta):
         for palabra in partes:
             if "TRD" in palabra:
                 return buscar_folio(palabra)
-
-    if any(
-        x in pregunta
-        for x in [
-            "EXPORTA",
-            "EXPORTAR",
-            "REPORTE",
-            "EXCEL"
-        ]
-    ):
-        return exportar_consulta(
-            pregunta
-        )
 
     if any(
         x in pregunta
