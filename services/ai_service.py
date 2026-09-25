@@ -1137,7 +1137,7 @@ def detalle_operativo(pregunta):
 def obtener_datos_exportacion(pregunta):
     solicitudes = obtener_solicitudes()
     if not solicitudes:
-        return None, "No existen datos para exportar."
+        return None
     pregunta = pregunta.upper()
     campos = [
         "jefatura",
@@ -1177,15 +1177,19 @@ def obtener_datos_exportacion(pregunta):
                     resultados.append(fila)
                 break
     if not resultados:
-        return None, "No encontré registros para exportar."
+        return None
     
     df = pd.DataFrame(resultados)
     nombre_archivo = (
         f"reporte_trade_"
         f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     )
+    df.to_excel(nombre_archivo, index=False)
     
-    return df, nombre_archivo
+    return {
+        "archivo": nombre_archivo,
+        "registros": len(df)
+    }
 
 
 # ==========================================
