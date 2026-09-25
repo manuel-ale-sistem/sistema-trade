@@ -5,8 +5,7 @@ from services.ai_service import (
     ultimos_folios,
     generar_insights,
     resumen_ejecutivo,
-    alertas_inteligentes,
-    obtener_datos_exportacion
+    alertas_inteligentes
 )
 
 
@@ -216,31 +215,14 @@ FOLIO TRD-XXXXXX
     )
 
     if pregunta:
-        respuesta = responder_trade_ai(pregunta)
+        resultado = responder_trade_ai(pregunta)
 
         st.session_state["chat_trade_ai"].append(
             (
                 pregunta,
-                respuesta
+                resultado
             )
         )
-
-        # ==========================================
-        # GESTIÓN DE DESCARGA DESDE LA VISTA
-        # ==========================================
-        resultado_export = obtener_datos_exportacion(pregunta)
-        if resultado_export:
-            archivo_path = resultado_export["archivo"]
-            try:
-                with open(archivo_path, "rb") as file:
-                    st.download_button(
-                        label="⬇️ Descargar Reporte",
-                        data=file,
-                        file_name=archivo_path,
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-            except Exception as e:
-                st.error(f"Error al preparar el archivo para descarga: {e}")
 
     for pregunta, respuesta in reversed(
         st.session_state[
@@ -258,6 +240,33 @@ FOLIO TRD-XXXXXX
         with st.chat_message(
             "assistant"
         ):
-            st.write(
-                respuesta
-            )
+            if (
+                isinstance(respuesta, dict)
+                and "archivo" in respuesta
+            ):
+                st.write(
+                    f"""
+📁 REPORTE EXCEL GENERADO
+Archivo:
+{respuesta["archivo"]}
+Total de registros:
+{respuesta["registros"]}
+"""
+                )
+                try:
+                    with open(
+                        respuesta["archivo"],
+                        "rb"
+                    ) as file:
+                        st.download_button(
+                            label="⬇️ Descargar Reporte",
+                            data=file,
+                            file_name=respuesta["archivo"],
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                except Exception as e:
+                    st.error(f"Error al preparar el archivo para descarga: {e}")
+            else:
+                st.write(
+                    respuesta
+                )
