@@ -864,12 +864,13 @@ def responder_trade_ai(pregunta):
     ):
         return top_usuarios()
 
+    # Corrección aplicada aquí para evitar conflicto con "JEFATURA"
     if any(
         x in pregunta
         for x in [
             "EFECTIVIDAD",
-            "DESEMPEÑO",
-            "JEFATURA"
+            "POR JEFATURA",
+            "DESEMPEÑO"
         ]
     ):
         return efectividad_jefaturas()
