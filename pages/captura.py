@@ -2,7 +2,7 @@ import os
 import uuid
 import base64
 import re
-
+from zoneinfo import ZoneInfo
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
@@ -258,7 +258,8 @@ def captura_form():
     if "ultimo_folio_registrado" in st.session_state and st.session_state.ultimo_folio_registrado:
         st.success(f"🎉 Última solicitud registrada exitosamente con el folio: **{st.session_state.ultimo_folio_registrado}**")
 
-    fecha = datetime.now().strftime(
+    # Obtener la hora actual ajustada a México
+    fecha = datetime.now(ZoneInfo("America/Mexico_City")).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
 
