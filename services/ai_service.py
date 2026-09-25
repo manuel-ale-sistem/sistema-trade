@@ -1000,14 +1000,13 @@ Efectividad Operativa:
 
 
 # ==========================================
-# CONSULTAS DINÁMICAS INTELIGENTES (MEJORADAS)
+# CONSULTAS DINÁMICAS INTELIGENTES
 # ==========================================
 def procesar_consulta_dinamica(pregunta):
     solicitudes = obtener_solicitudes()
     if not solicitudes:
         return None
     
-    # Normalización con regex para limpiar signos de puntuación y acentos extras
     pregunta_limpia = re.sub(
         r"[^A-Z0-9ÁÉÍÓÚÑ ]",
         "",
@@ -1033,7 +1032,6 @@ def procesar_consulta_dinamica(pregunta):
         
         if resultados:
             tipo_etiqueta = campo.upper()
-            # Extracción de hasta 5 folios de ejemplo
             folios = [
                 str(r.get("folio"))
                 for r in resultados[:5]
@@ -1053,6 +1051,82 @@ Folios ejemplo:
 {folios_texto}
 """
     return None
+
+
+# ==========================================
+# DETALLE OPERATIVO
+# ==========================================
+def detalle_operativo(pregunta):
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return None
+    campos = [
+        "jefatura",
+        "ruta",
+        "canal",
+        "gec",
+        "asesor",
+        "usuario"
+    ]
+    pregunta = pregunta.upper()
+    resultados = []
+    for campo in campos:
+        valores = set()
+        for fila in solicitudes:
+            valor = fila.get(campo)
+            if valor:
+                valores.add(
+                    str(valor).upper()
+                )
+        for valor in valores:
+            if valor in pregunta:
+                for fila in solicitudes:
+                    dato = str(
+                        fila.get(campo, "")
+                    ).upper()
+                    if valor not in dato:
+                        continue
+                    if (
+                        "ABIERTA" in pregunta
+                        or
+                        "ABIERTAS" in pregunta
+                    ):
+                        if fila.get(
+                            "estatus"
+                        ) in [
+                            "PRODUCTIVA",
+                            "IMPRODUCTIVA",
+                            "CERRADA"
+                        ]:
+                            continue
+                    resultados.append(
+                        fila
+                    )
+                break
+    if not resultados:
+        return None
+    respuesta = (
+        "📋 DETALLE OPERATIVO\n\n"
+    )
+    respuesta += (
+        f"Registros encontrados: "
+        f"{len(resultados)}\n\n"
+    )
+    for fila in resultados[:20]:
+        respuesta += (
+            f"• {fila.get('folio')}\n"
+            f"  Estatus: "
+            f"{fila.get('estatus')}\n"
+            f"  Negocio: "
+            f"{fila.get('negocio')}\n\n"
+        )
+    if len(resultados) > 20:
+        respuesta += (
+            f"... y "
+            f"{len(resultados) - 20} "
+            f"más"
+        )
+    return respuesta
 
 
 # ==========================================
@@ -1230,6 +1304,26 @@ def responder_trade_ai(pregunta):
             if "TRD" in palabra:
                 return buscar_folio(palabra)
 
+    # ==========================================
+    # DETALLE OPERATIVO
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "MOSTRAR",
+            "MUESTRA",
+            "MUESTRAME",
+            "MUÉSTRAME",
+            "DETALLE",
+            "FOLIOS"
+        ]
+    ):
+        detalle = detalle_operativo(
+            pregunta
+        )
+        if detalle:
+            return detalle
+
     # Motor dinámico automático con normalización y muestra de folios
     resultado_dinamico = procesar_consulta_dinamica(pregunta)
     if resultado_dinamico:
@@ -1262,5 +1356,5 @@ Comandos disponibles:
 • INSIGHTS
 • ÚLTIMO FOLIO
 • FOLIO TRD-XXXXXX
-• O pregunta directamente: "¿Cuántas tiene Jojutla?", "¿Ruta 12?", etc.
+• O pregunta directamente: "¿Cuántas tiene Jojutla?", "Muéstrame detalle de Ruta 12", etc.
 """
