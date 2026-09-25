@@ -1053,9 +1053,7 @@ Folios ejemplo:
 {folios_texto}
 """
     return None
-
-
-# ==========================================
+    # ==========================================
 # DETALLE OPERATIVO
 # ==========================================
 def detalle_operativo(pregunta):
@@ -1671,6 +1669,67 @@ La efectividad es favorable.
 
 
 # ==========================================
+# CENTRO EJECUTIVO
+# ==========================================
+def centro_ejecutivo():
+    metricas = obtener_metricas()
+    criticas = total_criticas()
+    total = metricas["total"]
+    productivas = metricas["productivas"]
+    efectividad = round(
+        (
+            productivas / total
+        ) * 100,
+        1
+    ) if total else 0
+    return f"""
+🏢 CENTRO EJECUTIVO TRADE
+================================
+📊 KPIS
+Solicitudes Totales:
+{metricas["total"]}
+Solicitudes Abiertas:
+{metricas["abiertas"]}
+Solicitudes Productivas:
+{metricas["productivas"]}
+Solicitudes Improductivas:
+{metricas["improductivas"]}
+Solicitudes Críticas:
+{criticas}
+Efectividad Global:
+{efectividad}%
+================================
+🚨 ALERTAS INTELIGENTES
+{alertas_inteligentes()}
+================================
+⚠️ RIESGO OPERATIVO
+{riesgo_operativo()}
+================================
+📋 DIAGNÓSTICO EJECUTIVO
+{diagnostico_ejecutivo()}
+================================
+🏆 RANKING OPERATIVO
+{ranking_operativo()}
+================================
+📈 TENDENCIAS
+{tendencias_solicitudes()}
+================================
+🤖 INSIGHTS
+{generar_insights()}
+================================
+✅ RECOMENDACIONES
+• Revisar solicitudes críticas.
+• Atender jefaturas con riesgo ALTO.
+• Reducir solicitudes abiertas.
+• Monitorear diariamente la efectividad.
+• Revisar modelos con mayor incidencia.
+• Dar seguimiento a tendencias.
+================================
+✅ FIN DEL REPORTE EJECUTIVO
+"""
+
+
+# ==========================================
 # DASHBOARD EJECUTIVO
 # ==========================================
 def dashboard_ejecutivo():
@@ -1815,6 +1874,20 @@ def responder_trade_ai(pregunta):
         ]
     ):
         return resumen_ejecutivo()
+
+    # ==========================================
+    # CENTRO EJECUTIVO
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "CENTRO EJECUTIVO",
+            "TABLERO EJECUTIVO",
+            "REPORTE EJECUTIVO",
+            "ESTATUS GENERAL"
+        ]
+    ):
+        return centro_ejecutivo()
 
     if any(
         x in pregunta
@@ -1962,4 +2035,11 @@ Total de registros:
     if resultado_dinamico:
         return resultado_dinamico
 
-    return "No comprendí tu consulta. Escribe 'RESUMEN' o consulta un folio."
+    return """No comprendí tu consulta. 
+Puedes escribir comandos como:
+• RESUMEN
+• CENTRO EJECUTIVO
+• TABLERO EJECUTIVO
+• REPORTE EJECUTIVO
+• ESTATUS GENERAL
+O consultar un folio directamente."""
