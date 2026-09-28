@@ -2193,7 +2193,7 @@ Total de registros:
 
     return """No comprendí tu consulta. 
 Puedes escribir comandos como:
-• RESUMEN"""
+• RESUMEN
 • CENTRO EJECUTIVO
 • TABLERO EJECUTIVO
 • REPORTE EJECUTIVO
