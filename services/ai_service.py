@@ -2198,7 +2198,21 @@ def responder_trade_ai(pregunta):
         ]
     ):
         return diagnostico_ejecutivo()
+    # ==========================================
+    # RECOMENDACIONES
+    # ==========================================
 
+    if any(
+    x in pregunta
+    for x in [
+        "RECOMENDACION",
+        "RECOMENDACIONES",
+        "ACCIONES",
+        "PRIORIDADES"
+        ]
+    ):
+
+    return recomendaciones_automaticas()
     # ==========================================
     # ANALISTA TRADE
     # ==========================================
