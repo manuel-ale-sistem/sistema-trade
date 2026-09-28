@@ -1053,7 +1053,8 @@ Folios ejemplo:
 {folios_texto}
 """
     return None
-    # ==========================================
+
+# ==========================================
 # DETALLE OPERATIVO
 # ==========================================
 def detalle_operativo(pregunta):
@@ -1598,6 +1599,144 @@ Riesgo:
 
 
 # ==========================================
+# PREDICCIÓN DE SATURACIÓN OPERATIVA
+# ==========================================
+def prediccion_saturacion():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+🔮 PREDICCIÓN DE SATURACIÓN
+
+No existen datos suficientes.
+"""
+
+    resumen = {}
+    for fila in solicitudes:
+        jefatura = fila.get("jefatura")
+        if not jefatura:
+            continue
+
+        if jefatura not in resumen:
+            resumen[jefatura] = {
+                "total": 0,
+                "abiertas": 0,
+                "criticas": 0,
+                "productivas": 0
+            }
+
+        resumen[jefatura]["total"] += 1
+        estatus = fila.get("estatus", "")
+
+        if estatus == "PRODUCTIVA":
+            resumen[jefatura]["productivas"] += 1
+
+        if estatus not in [
+            "PRODUCTIVA",
+            "IMPRODUCTIVA",
+            "CERRADA"
+        ]:
+            resumen[jefatura]["abiertas"] += 1
+            try:
+                fecha = fila.get("fecha", "")
+                if fecha:
+                    dias = (
+                        datetime.now()
+                        -
+                        datetime.strptime(
+                            fecha[:10],
+                            "%Y-%m-%d"
+                        )
+                    ).days
+                    if dias >= 7:
+                        resumen[jefatura]["criticas"] += 1
+            except Exception:
+                pass
+
+    respuesta = "🔮 PREDICCIÓN DE SATURACIÓN\n\n"
+    ranking = []
+
+    for jefatura, datos in resumen.items():
+        total = datos["total"]
+        efectividad = round(
+            (
+                datos["productivas"]
+                / total
+            ) * 100,
+            1
+        ) if total else 0
+
+        score = (
+            datos["abiertas"]
+            +
+            (datos["criticas"] * 3)
+        )
+
+        if efectividad < 70:
+            score += 10
+
+        if score >= 25:
+            riesgo = "🔴 ALTO"
+        elif score >= 12:
+            riesgo = "🟠 MEDIO"
+        else:
+            riesgo = "🟢 BAJO"
+
+        ranking.append(
+            (
+                score,
+                jefatura,
+                riesgo,
+                efectividad,
+                datos
+            )
+        )
+
+    ranking.sort(
+        reverse=True
+    )
+
+    for (
+        score,
+        jefatura,
+        riesgo,
+        efectividad,
+        datos
+    ) in ranking[:10]:
+        respuesta += f"""
+📍 {jefatura}
+
+Riesgo proyectado:
+{riesgo}
+
+Abiertas:
+{datos['abiertas']}
+
+Críticas:
+{datos['criticas']}
+
+Efectividad:
+{efectividad}%
+
+Score:
+{score}
+
+------------------------
+"""
+
+    respuesta += """
+
+🤖 CONCLUSIÓN
+
+Las jefaturas con riesgo ALTO
+deben ser atendidas de forma
+prioritaria para evitar
+saturación operativa.
+"""
+
+    return respuesta
+
+
+# ==========================================
 # DIAGNÓSTICO EJECUTIVO
 # ==========================================
 def diagnostico_ejecutivo():
@@ -1705,6 +1844,9 @@ Efectividad Global:
 ⚠️ RIESGO OPERATIVO
 {riesgo_operativo()}
 ================================
+🔮 PREDICCIÓN DE SATURACIÓN
+{prediccion_saturacion()}
+================================
 📋 DIAGNÓSTICO EJECUTIVO
 {diagnostico_ejecutivo()}
 ================================
@@ -1746,7 +1888,6 @@ def dashboard_ejecutivo():
 # ==========================================
 # RESPONDER IA
 # ==========================================
-
 def responder_trade_ai(pregunta):
     pregunta = pregunta.upper().strip()
 
@@ -1901,6 +2042,22 @@ def responder_trade_ai(pregunta):
         return alertas_inteligentes()
 
     # ==========================================
+    # PREDICCIÓN DE SATURACIÓN
+    # ==========================================
+    if any(
+        x in pregunta
+        for x in [
+            "SATURACION",
+            "SATURACIÓN",
+            "PREDICCION",
+            "PREDICCIÓN",
+            "RIESGO FUTURO",
+            "SATURACION OPERATIVA"
+        ]
+    ):
+        return prediccion_saturacion()
+        
+    # ==========================================
     # COMPARATIVOS
     # ==========================================
     if (
@@ -2036,7 +2193,7 @@ Total de registros:
 
     return """No comprendí tu consulta. 
 Puedes escribir comandos como:
-• RESUMEN
+• RESUMEN"""
 • CENTRO EJECUTIVO
 • TABLERO EJECUTIVO
 • REPORTE EJECUTIVO
