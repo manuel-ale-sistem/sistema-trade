@@ -4,7 +4,7 @@ from services.ai_service import (
     obtener_metricas,
     ultimos_folios,
     generar_insights,
-    resumen_ejecutivo,
+    centro_ejecutivo,
     alertas_inteligentes
 )
 
@@ -58,7 +58,7 @@ del sistema Trade.
         expanded=True
     ):
         st.success(
-            resumen_ejecutivo()
+            centro_ejecutivo()
         )
 
     # ==========================================
