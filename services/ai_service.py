@@ -1236,3 +1236,105 @@ Puedes escribir comandos como:
 • REPORTE EJECUTIVO
 • ESTATUS GENERAL
 O consultar un folio directamente."""
+
+# ==========================================
+# INSIGHTS AUTOMÁTICOS
+# ==========================================
+
+def generar_insights():
+    try:
+        solicitudes = obtener_solicitudes()
+        if not solicitudes:
+            return "No hay suficientes datos para generar insights."
+        
+        metricas = obtener_metricas(solicitudes)
+        total = metricas["total"]
+        productivas = metricas["productivas"]
+        efectividad = round((productivas / total) * 100, 1) if total > 0 else 0
+        
+        insights = []
+        if efectividad > 80:
+            insights.append("• El nivel de efectividad general es óptimo (>80%).")
+        elif efectividad < 60:
+            insights.append("• Alerta: La efectividad general se encuentra por debajo del estándar esperado.")
+            
+        criticas = total_criticas(solicitudes)
+        if criticas > 0:
+            insights.append(f"• Se detectaron {criticas} solicitudes con antigüedad mayor a 7 días que requieren atención urgente.")
+        else:
+            insights.append("• Excelente control de tiempos: no hay solicitudes críticas críticas pendientes.")
+            
+        return "\n".join(insights)
+    except Exception as e:
+        return f"Error generando insights: {e}"
+
+
+# ==========================================
+# ENRUTADOR DE COMANDOS / RESPONDER IA
+# ==========================================
+
+def responder_trade_ai(pregunta):
+    if not pregunta:
+        return "Por favor, escribe una pregunta o comando válido."
+    
+    p = pregunta.strip().upper()
+    
+    # Detección de folios específicos
+    if p.startswith("FOLIO ") or "TRD-" in p:
+        match = re.search(r'(TRD-\d+)', p)
+        if match:
+            return buscar_folio(match.group(1))
+        
+    if "RESUMEN" in p and "EJECUTIVO" in p:
+        return resumen_ejecutivo()
+    elif "RESUMEN" in p:
+        return obtener_resumen_general()
+    elif "ABIERTAS" in p:
+        return solicitudes_abiertas()
+    elif "PRODUCTIVAS" in p and "IM" not in p:
+        return solicitudes_productivas()
+    elif "IMPRODUCTIVAS" in p:
+        return solicitudes_improductivas()
+    elif "MODELO" in p or "INCIDENCIA" in p or "FALLAS" in p:
+        return top_modelos()
+    elif "JEFATURA" in p:
+        return top_jefaturas()
+    elif "CANAL" in p:
+        return top_canales()
+    elif "GEC" in p:
+        return top_gec()
+    elif "ASESOR" in p:
+        return top_asesores()
+    elif "RUTA" in p:
+        return top_rutas()
+    elif "USUARIO" in p:
+        return top_usuarios()
+    elif "EFECTIVIDAD" in p:
+        return efectividad_jefaturas()
+    elif "CRITICA" in p or "ATRASADA" in p or "7 DÍAS" in p or "DIAS" in p:
+        return solicitudes_criticas()
+    elif "TENDENCIA" in p or "AUMENTANDO" in p or "FRECUENTE" in p or "CRECIMIENTO" in p:
+        return tendencias_solicitudes()
+    elif "RANKING" in p:
+        return ranking_operativo()
+    elif "ALERTA" in p:
+        return alertas_inteligentes()
+    elif "CENTRO EJECUTIVO" in p:
+        return centro_ejecutivo()
+    elif "INSIGHT" in p:
+        return generar_insights()
+    elif "PRIORIDAD" in p or "REVISAR HOY" in p or "URGENTE" in p:
+        return prioridades_del_dia()
+    else:
+        return f"""
+No comprendí con exactitud tu solicitud: "{pregunta}"
+
+Te sugiero consultar alguno de los siguientes comandos:
+• RESUMEN GENERAL
+• SOLICITUDES ABIERTAS
+• TOP MODELOS
+• TOP JEFATURAS
+• CRITICAS
+• ALERTAS
+• O escribe directamente un folio como: FOLIO TRD-000001
+"""
