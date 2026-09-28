@@ -1735,6 +1735,107 @@ saturación operativa.
 
     return respuesta
 
+# ==========================================
+# RECOMENDACIONES AUTOMÁTICAS
+# ==========================================
+
+def recomendaciones_automaticas():
+
+    recomendaciones = []
+
+    metricas = obtener_metricas()
+
+    criticas = total_criticas()
+
+    if criticas > 0:
+
+        recomendaciones.append(
+            f"🚨 Atender {criticas} solicitudes críticas."
+        )
+
+    if metricas["abiertas"] > 20:
+
+        recomendaciones.append(
+            "📂 Reducir solicitudes abiertas."
+        )
+
+    solicitudes = obtener_solicitudes()
+
+    resumen = {}
+
+    for fila in solicitudes:
+
+        jefatura = fila.get("jefatura")
+
+        if not jefatura:
+            continue
+
+        if jefatura not in resumen:
+
+            resumen[jefatura] = {
+                "total": 0,
+                "productivas": 0
+            }
+
+        resumen[jefatura]["total"] += 1
+
+        if fila.get("estatus") == "PRODUCTIVA":
+
+            resumen[jefatura]["productivas"] += 1
+
+    peor_jefatura = None
+    peor_efectividad = 999
+
+    for jefatura, datos in resumen.items():
+
+        total = datos["total"]
+
+        efectividad = (
+            (datos["productivas"] / total) * 100
+        ) if total else 0
+
+        if efectividad < peor_efectividad:
+
+            peor_efectividad = efectividad
+            peor_jefatura = jefatura
+
+    if peor_jefatura:
+
+        recomendaciones.append(
+            f"📉 Revisar efectividad de {peor_jefatura} "
+            f"({round(peor_efectividad,1)}%)."
+        )
+
+    modelo_riesgo = modelo_lider()
+
+    if modelo_riesgo != "N/D":
+
+        recomendaciones.append(
+            f"🧊 Monitorear incidencias del modelo {modelo_riesgo}."
+        )
+
+    if not recomendaciones:
+
+        return """
+✅ RECOMENDACIONES
+
+No existen acciones prioritarias.
+"""
+
+    respuesta = (
+        "🤖 RECOMENDACIONES AUTOMÁTICAS\n\n"
+    )
+
+    for idx, rec in enumerate(
+        recomendaciones,
+        start=1
+    ):
+
+        respuesta += (
+            f"{idx}. {rec}\n\n"
+        )
+
+    return respuesta
 
 # ==========================================
 # DIAGNÓSTICO EJECUTIVO
