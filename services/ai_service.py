@@ -171,10 +171,6 @@ Movimientos:
         return f"Error: {e}"
 
 
-# ==========================================
-# CONSULTAR ÚLTIMO FOLIO EN MEMORIA
-# ==========================================
-
 def consultar_ultimo_folio():
     folio = st.session_state.get("ultimo_folio_ai")
     if not folio:
@@ -260,7 +256,7 @@ def modelos_mayor_incidencia():
     contador = _obtener_contador_detalles("modelo")
     if not contador:
         return """
-🚨 MODELOS COM MÁS INCIDENCIAS
+🚨 MODELOS CON MÁS INCIDENCIAS
 No existen datos disponibles.
 """
     respuesta = "🚨 MODELOS CON MÁS INCIDENCIAS\n\n"
@@ -340,7 +336,7 @@ def top_usuarios():
 
 
 # ==========================================
-# EFECTIVIDAD POR JEFATURA
+# EFECTIVIDAD
 # ==========================================
 
 def efectividad_jefaturas(solicitudes=None):
@@ -368,7 +364,7 @@ def efectividad_jefaturas(solicitudes=None):
 
 
 # ==========================================
-# SOLICITUDES CRÍTICAS Y TOTAL
+# SOLICITUDES CRÍTICAS
 # ==========================================
 
 def total_criticas(solicitudes=None):
@@ -431,7 +427,7 @@ tienen menos de 7 días.
 
 
 # ==========================================
-# TENDENCIAS DE SOLICITUDES
+# TENDENCIAS
 # ==========================================
 
 def tendencias_solicitudes():
@@ -449,7 +445,7 @@ def tendencias_solicitudes():
 
 
 # ==========================================
-# LÍDERES (JEFATURA, ASESOR, RUTA, MODELO)
+# LÍDERES Y RANKING
 # ==========================================
 
 def jefatura_lider(solicitudes=None):
@@ -517,154 +513,10 @@ def modelo_lider():
 
 
 # ==========================================
-# PRIORIDADES, RESUMEN EJECUTIVO Y ALERTAS
+# UTILIDAD PRIVADA: ANÁLISIS DE JEFATURAS
 # ==========================================
 
-def prioridades_del_dia():
-    solicitudes = obtener_solicitudes()
-    criticas = total_criticas(solicitudes)
-    metricas = obtener_metricas(solicitudes)
-    return f"""
-📋 PRIORIDADES DEL DÍA
-• Solicitudes críticas a revisar: {criticas}
-• Solicitudes abiertas totales: {metricas["abiertas"]}
-• Monitorear jefaturas con mayor carga de trabajo.
-• Validar estatus de pendientes operativos.
-"""
-
-
-def resumen_ejecutivo():
-    solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas(solicitudes)
-    modelo = modelo_lider()
-    criticas = total_criticas(solicitudes)
-    total = metricas["total"]
-    productivas = metricas["productivas"]
-    
-    eficiencia = round((productivas / total) * 100, 1) if total > 0 else 0
-    
-    return f"""
-🤖 RESUMEN EJECUTIVO TRADE
-📋 Solicitudes Totales:
-{metricas["total"]}
-📂 Solicitudes Abiertas:
-{metricas["abiertas"]}
-🚨 Solicitudes Críticas:
-{criticas}
-✅ Productivas:
-{metricas["productivas"]}
-❌ Improductivas:
-{metricas["improductivas"]}
-📈 Efectividad:
-{eficiencia}%
-🏆 Modelo Líder:
-{modelo}
-{jefatura_lider(solicitudes)}
-{asesor_lider(solicitudes)}
-{ruta_lider(solicitudes)}
-"""
-
-
-def alertas_inteligentes():
-    solicitudes = obtener_solicitudes()
-    if not solicitudes:
-        return """
-🤖 ALERTAS INTELIGENTES
-No existen datos suficientes.
-"""
-    alertas = []
-    criticas = total_criticas(solicitudes)
-    if criticas > 0:
-        alertas.append(f"🚨 Existen {criticas} solicitudes críticas con más de 7 días.")
-        
-    metricas = obtener_metricas(solicitudes)
-    total = metricas["total"]
-    productivas = metricas["productivas"]
-    
-    if total > 0:
-        efectividad = round((productivas / total) * 100, 1)
-        if efectividad < 70:
-            alertas.append(f"⚠️ La efectividad general es {efectividad}%.") # Corregido
-            
-    contador = _obtener_contador_solicitudes(solicitudes, "jefatura")
-    lider = contador.most_common(1)
-    if lider:
-        alertas.append(f"📊 La jefatura con mayor carga es {lider[0][0]} con {lider[0][1]} solicitudes.")
-        
-    if not alertas:
-        return """
-✅ ALERTAS INTELIGENTES
-No se detectaron anomalías.
-"""
-    
-    respuesta = "🤖 ALERTAS INTELIGENTES\n\n"
-    for alerta in alertas:
-        respuesta += f"{alerta}\n"
-    return respuesta
-
-
-# ==========================================
-# CENTRO EJECUTIVO Y AYUDA
-# ==========================================
-
-def centro_ejecutivo():
-    solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas(solicitudes)
-    insights = generar_insights() # Asegúrate de tener esta función en tu módulo complementario
-    return f"""
-🤖 CENTRO EJECUTIVO
-================================
-📊 MÉTRICAS GENERALES
-Totales: {metricas["total"]}
-Abiertas: {metricas["abiertas"]}
-Productivas: {metricas["productivas"]}
-Improductivas: {metricas["improductivas"]}
-================================
-🤖 INSIGHTS
-{insights}
-================================
-📋 PRIORIDADES DEL DÍA
-{prioridades_del_dia()}
-"""
-
-
-def ayuda_final():
-    return """
-💡 COMANDOS DISPONIBLES:
-RESUMEN GENERAL
-ESTATUS DE FOLIO [FOLIO]
-SOLICITUDES ABIERTAS
-PRODUCTIVAS
-IMPRODUCTIVAS
-TOP MODELOS
-TOP JEFATURAS
-TOP CANALES
-TOP GEC
-TOP ASESORES
-TOP RUTAS
-TOP USUARIOS
-EFECTIVIDAD
-CRITICAS
-TENDENCIAS
-RANKING
-RESUMEN EJECUTIVO
-ALERTAS
-CENTRO EJECUTIVO
-PRIORIDADES
-• PRIORIDADES DEL DIA
-• ¿QUE DEBO REVISAR HOY?
-• ¿QUE ES URGENTE?
-"""
-    from collections import Counter
-from datetime import datetime
-import pandas as pd
-import plotly.express as px
-
-# ==========================================
-# UTILIDAD PRIVADA: ANÁLISIS DE JEFATURAS (CACHÉ INTERNA)
-# ==========================================
 def _calcular_resumen_jefaturas(solicitudes):
-    """Calcula métricas por jefatura en una sola pasada para evitar bucles múltiples."""
     resumen = {}
     hoy = datetime.now()
     
@@ -702,32 +554,25 @@ def _calcular_resumen_jefaturas(solicitudes):
 
 
 # ==========================================
-# GRAFICA JEFATURAS
+# GRÁFICAS
 # ==========================================
+
 def grafica_jefaturas():
     solicitudes = obtener_solicitudes()
     contador = Counter(fila.get("jefatura") for fila in solicitudes if fila.get("jefatura"))
-    
     df = pd.DataFrame(contador.items(), columns=["Jefatura", "Solicitudes"])
     fig = px.bar(df, x="Jefatura", y="Solicitudes", title="Solicitudes por Jefatura")
     return fig
 
 
-# ==========================================
-# GRAFICA CANALES
-# ==========================================
 def grafica_canales():
     solicitudes = obtener_solicitudes()
     contador = Counter(fila.get("canal") for fila in solicitudes if fila.get("canal"))
-    
     df = pd.DataFrame(contador.items(), columns=["Canal", "Solicitudes"])
     fig = px.pie(df, names="Canal", values="Solicitudes", title="Distribución por Canal")
     return fig
 
 
-# ==========================================
-# GRAFICA MODELOS
-# ==========================================
 def grafica_modelos():
     detalles = (
         supabase
@@ -746,8 +591,300 @@ def grafica_modelos():
 
 
 # ==========================================
-# COMPARATIVO INTELIGENTE
+# FUNCIONES UNIFICADAS Y SIN DUPLICADOS
 # ==========================================
+
+def generar_insights():
+    try:
+        solicitudes = obtener_solicitudes()
+        if not solicitudes:
+            return "No hay suficientes datos para generar insights."
+        
+        metricas = obtener_metricas(solicitudes)
+        total = metricas["total"]
+        productivas = metricas["productivas"]
+        efectividad = round((productivas / total) * 100, 1) if total > 0 else 0
+        
+        insights = []
+        if efectividad > 80:
+            insights.append("• El nivel de efectividad general es óptimo (>80%).")
+        elif efectividad < 60:
+            insights.append("• Alerta: La efectividad general se encuentra por debajo del estándar esperado.")
+            
+        criticas = total_criticas(solicitudes)
+        if criticas > 0:
+            insights.append(f"• Se detectaron {criticas} solicitudes con antigüedad mayor a 7 días que requieren atención urgente.")
+        else:
+            insights.append("• Excelente control de tiempos: no hay solicitudes críticas pendientes.")
+            
+        return "\n".join(insights)
+    except Exception as e:
+        return f"Error generando insights: {e}"
+
+
+def riesgo_operativo(solicitudes=None):
+    if solicitudes is None:
+        solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "\n🚨 RIESGO OPERATIVO\nNo existen datos suficientes.\n"
+        
+    resumen = _calcular_resumen_jefaturas(solicitudes)
+    respuesta = "🚨 RIESGO OPERATIVO\n\n"
+    ranking = []
+    
+    for jefatura, datos in resumen.items():
+        total = datos["total"]
+        efectividad = round((datos["productivas"] / total) * 100, 1) if total else 0
+        score = datos["abiertas"] + (datos["criticas"] * 2)
+        if efectividad < 70:
+            score += 5
+        ranking.append((score, jefatura, efectividad, datos))
+        
+    ranking.sort(reverse=True)
+    
+    for score, jefatura, efectividad, datos in ranking[:5]:
+        if score >= 15:
+            nivel = "🔴 ALTO"
+        elif score >= 8:
+            nivel = "🟠 MEDIO"
+        else:
+            nivel = "🟢 BAJO"
+            
+        respuesta += f"""
+{jefatura}
+Riesgo: {nivel}
+• Abiertas: {datos["abiertas"]}
+• Críticas: {datos["criticas"]}
+• Efectividad: {efectividad}%
+---------------------
+"""
+    return respuesta
+
+
+def diagnostico_ejecutivo():
+    solicitudes = obtener_solicitudes()
+    metricas = obtener_metricas()
+    total = metricas["total"]
+    productivas = metricas["productivas"]
+    efectividad = round((productivas / total) * 100, 1) if total else 0
+    criticas = total_criticas()
+    lider = jefatura_lider()
+    
+    diagnostico = f"""
+🤖 DIAGNÓSTICO EJECUTIVO
+📊 Situación General
+Solicitudes: {total}
+Abiertas: {metricas["abiertas"]}
+Críticas: {criticas}
+Efectividad: {efectividad}%
+🏆 Liderazgo Operativo
+{lider}
+"""
+    if criticas > 10:
+        diagnostico += "\n🚨 Observación\nExiste acumulación importante de solicitudes críticas.\nSe recomienda priorizar atención inmediata.\n"
+    elif criticas > 0:
+        diagnostico += "\n⚠️ Observación\nExisten solicitudes críticas que deben monitorearse.\n"
+    else:
+        diagnostico += "\n✅ Observación\nNo se detectan atrasos operativos importantes.\n"
+
+    if efectividad < 70:
+        diagnostico += "\n📉 Riesgo\nLa efectividad se encuentra por debajo del objetivo.\n"
+    else:
+        diagnostico += "\n📈 Desempeño\nLa efectividad es favorable.\n"
+
+    diagnostico += f"\n========================\n🚨 RIESGO OPERATIVO\n{riesgo_operativo(solicitudes)}\n"
+    return diagnostico
+
+
+def centro_ejecutivo():
+    solicitudes = obtener_solicitudes()
+    metricas = obtener_metricas()
+    criticas = total_criticas()
+    total = metricas["total"]
+    productivas = metricas["productivas"]
+    efectividad = round((productivas / total) * 100, 1) if total else 0
+    
+    return f"""
+🏢 CENTRO EJECUTIVO TRADE
+================================
+📊 KPIS
+Solicitudes Totales: {metricas["total"]}
+Solicitudes Abiertas: {metricas["abiertas"]}
+Solicitudes Productivas: {metricas["productivas"]}
+Solicitudes Improductivas: {metricas["improductivas"]}
+Solicitudes Críticas: {criticas}
+Efectividad Global: {efectividad}%
+================================
+🚨 ALERTAS INTELIGENTES
+{alertas_inteligentes()}
+================================
+⚠️ RIESGO OPERATIVO
+{riesgo_operativo(solicitudes)}
+================================
+🔮 PREDICCIÓN DE SATURACIÓN
+{prediccion_saturacion(solicitudes)}
+================================
+📋 DIAGNÓSTICO EJECUTIVO
+{diagnostico_ejecutivo()}
+================================
+🏆 RANKING OPERATIVO
+{ranking_operativo()}
+================================
+📈 TENDENCIAS
+{tendencias_solicitudes()}
+================================
+🤖 INSIGHTS
+{generar_insights()}
+================================
+✅ RECOMENDACIONES
+• Revisar solicitudes críticas.
+• Atender jefaturas con riesgo ALTO.
+• Reducir solicitudes abiertas.
+• Monitorear diariamente la efectividad.
+• Revisar modelos con mayor incidencia.
+• Dar seguimiento a tendencias.
+================================
+✅ FIN DEL REPORTE EJECUTIVO
+"""
+
+
+# ==========================================
+# OTRAS FUNCIONES COMPLEMENTARIAS
+# ==========================================
+
+def prediccion_saturacion(solicitudes=None):
+    if solicitudes is None:
+        solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "\n🔮 PREDICCIÓN DE SATURACIÓN\nNo existen datos suficientes.\n"
+
+    resumen = _calcular_resumen_jefaturas(solicitudes)
+    respuesta = "🔮 PREDICCIÓN DE SATURACIÓN\n\n"
+    ranking = []
+
+    for jefatura, datos in resumen.items():
+        total = datos["total"]
+        efectividad = round((datos["productivas"] / total) * 100, 1) if total else 0
+        score = datos["abiertas"] + (datos["criticas"] * 3)
+        if efectividad < 70:
+            score += 10
+
+        if score >= 25:
+            riesgo = "🔴 ALTO"
+        elif score >= 12:
+            riesgo = "🟠 MEDIO"
+        else:
+            riesgo = "🟢 BAJO"
+
+        ranking.append((score, jefatura, riesgo, efectividad, datos))
+
+    ranking.sort(reverse=True)
+
+    for score, jefatura, riesgo, efectividad, datos in ranking[:10]:
+        respuesta += f"""
+📍 {jefatura}
+Riesgo proyectado: {riesgo}
+Abiertas: {datos['abiertas']}
+Críticas: {datos['criticas']}
+Efectividad: {efectividad}%
+Score: {score}
+------------------------
+"""
+
+    respuesta += "\n\n🤖 CONCLUSIÓN\nLas jefaturas con riesgo ALTO deben ser atendidas de forma prioritaria para evitar saturación operativa.\n"
+    return respuesta
+
+
+def alertas_inteligentes():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return """
+🤖 ALERTAS INTELIGENTES
+No existen datos suficientes.
+"""
+    alertas = []
+    criticas = total_criticas(solicitudes)
+    if criticas > 0:
+        alertas.append(f"🚨 Existen {criticas} solicitudes críticas con más de 7 días.")
+        
+    metricas = obtener_metricas(solicitudes)
+    total = metricas["total"]
+    productivas = metricas["productivas"]
+    
+    if total > 0:
+        efectividad = round((productivas / total) * 100, 1)
+        if efectividad < 70:
+            alertas.append(f"⚠️ La efectividad general es {efectividad}%.")
+            
+    contador = _obtener_contador_solicitudes(solicitudes, "jefatura")
+    lider = contador.most_common(1)
+    if lider:
+        alertas.append(f"📊 La jefatura con mayor carga es {lider[0][0]} con {lider[0][1]} solicitudes.")
+        
+    if not alertas:
+        return """
+✅ ALERTAS INTELIGENTES
+No se detectaron anomalías.
+"""
+    
+    respuesta = "🤖 ALERTAS INTELIGENTES\n\n"
+    for alerta in alertas:
+        respuesta += f"{alerta}\n"
+    return respuesta
+
+
+def prioridades_del_dia():
+    solicitudes = obtener_solicitudes()
+    if not solicitudes:
+        return "\n📋 PRIORIDADES DEL DÍA\nNo existen datos suficientes.\n"
+
+    prioridades = []
+    criticas = []
+    hoy = datetime.now()
+
+    for fila in solicitudes:
+        estatus = fila.get("estatus", "")
+        if estatus in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]:
+            continue
+        try:
+            fecha = fila.get("fecha", "")
+            if fecha:
+                dias = (hoy - datetime.strptime(fecha[:10], "%Y-%m-%d")).days
+                if dias >= 7:
+                    criticas.append((fila.get("folio"), dias))
+        except Exception:
+            pass
+
+    if criticas:
+        prioridades.append(f"🚨 Solicitudes críticas: {len(criticas)}")
+
+    metricas = obtener_metricas()
+    if metricas["abiertas"] > 20:
+        prioridades.append(f"📂 Solicitudes abiertas: {metricas['abiertas']}")
+
+    riesgo = riesgo_operativo(solicitudes)
+    if "🔴 ALTO" in riesgo:
+        prioridades.append("⚠️ Existen jefaturas con riesgo ALTO.")
+
+    modelo = modelo_lider()
+    prioridades.append(f"🧊 Revisar incidencias del modelo {modelo}")
+
+    respuesta = "📋 PRIORIDADES DEL DÍA\n\n"
+    if not prioridades:
+        respuesta += "✅ No existen prioridades urgentes."
+        return respuesta
+
+    for idx, item in enumerate(prioridades, start=1):
+        respuesta += f"{idx}. {item}\n\n"
+
+    if criticas:
+        respuesta += "🚨 FOLIOS PRIORITARIOS\n\n"
+        for folio, dias in criticas[:10]:
+            respuesta += f"• {folio} ({dias} días)\n"
+
+    return respuesta
+
+
 def comparativo_inteligente(pregunta):
     solicitudes = obtener_solicitudes()
     if not solicitudes:
@@ -813,507 +950,52 @@ Ejemplos:
 
 
 # ==========================================
-# GRAFICA COMPARATIVO
-# ==========================================
-def grafica_comparativo(valor1, valor2, campo):
-    solicitudes = obtener_solicitudes()
-    v1_up, v2_up = valor1.upper(), valor2.upper()
-    
-    total1 = sum(1 for s in solicitudes if str(s.get(campo, "")).upper() == v1_up)
-    total2 = sum(1 for s in solicitudes if str(s.get(campo, "")).upper() == v2_up)
-    
-    df = pd.DataFrame({
-        campo: [valor1, valor2],
-        "Solicitudes": [total1, total2]
-    })
-    fig = px.bar(df, x=campo, y="Solicitudes", color=campo, title=f"{valor1} vs {valor2}")
-    return fig
-
-
-# ==========================================
-# RIESGO OPERATIVO
-# ==========================================
-def riesgo_operativo(solicitudes=None):
-    if solicitudes is None:
-        solicitudes = obtener_solicitudes()
-    if not solicitudes:
-        return "\n🚨 RIESGO OPERATIVO\nNo existen datos suficientes.\n"
-        
-    resumen = _calcular_resumen_jefaturas(solicitudes)
-    respuesta = "🚨 RIESGO OPERATIVO\n\n"
-    ranking = []
-    
-    for jefatura, datos in resumen.items():
-        total = datos["total"]
-        efectividad = round((datos["productivas"] / total) * 100, 1) if total else 0
-        score = datos["abiertas"] + (datos["criticas"] * 2)
-        if efectividad < 70:
-            score += 5
-        ranking.append((score, jefatura, efectividad, datos))
-        
-    ranking.sort(reverse=True)
-    
-    for score, jefatura, efectividad, datos in ranking[:5]:
-        if score >= 15:
-            nivel = "🔴 ALTO"
-        elif score >= 8:
-            nivel = "🟠 MEDIO"
-        else:
-            nivel = "🟢 BAJO"
-            
-        respuesta += f"""
-{jefatura}
-Riesgo: {nivel}
-• Abiertas: {datos["abiertas"]}
-• Críticas: {datos["criticas"]}
-• Efectividad: {efectividad}%
----------------------
-"""
-    return respuesta
-
-
-# ==========================================
-# PREDICCIÓN DE SATURACIÓN OPERATIVA
-# ==========================================
-def prediccion_saturacion(solicitudes=None):
-    if solicitudes is None:
-        solicitudes = obtener_solicitudes()
-    if not solicitudes:
-        return "\n🔮 PREDICCIÓN DE SATURACIÓN\nNo existen datos suficientes.\n"
-
-    resumen = _calcular_resumen_jefaturas(solicitudes)
-    respuesta = "🔮 PREDICCIÓN DE SATURACIÓN\n\n"
-    ranking = []
-
-    for jefatura, datos in resumen.items():
-        total = datos["total"]
-        efectividad = round((datos["productivas"] / total) * 100, 1) if total else 0
-        score = datos["abiertas"] + (datos["criticas"] * 3)
-        if efectividad < 70:
-            score += 10
-
-        if score >= 25:
-            riesgo = "🔴 ALTO"
-        elif score >= 12:
-            riesgo = "🟠 MEDIO"
-        else:
-            riesgo = "🟢 BAJO"
-
-        ranking.append((score, jefatura, riesgo, efectividad, datos))
-
-    ranking.sort(reverse=True)
-
-    for score, jefatura, riesgo, efectividad, datos in ranking[:10]:
-        respuesta += f"""
-📍 {jefatura}
-Riesgo proyectado: {riesgo}
-Abiertas: {datos['abiertas']}
-Críticas: {datos['criticas']}
-Efectividad: {efectividad}%
-Score: {score}
-------------------------
-"""
-
-    respuesta += "\n\n🤖 CONCLUSIÓN\nLas jefaturas con riesgo ALTO deben ser atendidas de forma prioritaria para evitar saturación operativa.\n"
-    return respuesta
-
-
-# ==========================================
-# RECOMENDACIONES AUTOMÁTICAS
-# ==========================================
-def recomendaciones_automaticas():
-    recomendaciones = []
-    metricas = obtener_metricas()
-    criticas = total_criticas()
-
-    if criticas > 0:
-        recomendaciones.append(f"🚨 Atender {criticas} solicitudes críticas.")
-
-    if metricas["abiertas"] > 20:
-        recomendaciones.append("📂 Reducir solicitudes abiertas.")
-
-    solicitudes = obtener_solicitudes()
-    resumen = _calcular_resumen_jefaturas(solicitudes)
-
-    peor_jefatura = None
-    peor_efectividad = 999
-
-    for jefatura, datos in resumen.items():
-        total = datos["total"]
-        efectividad = (datos["productivas"] / total) * 100 if total else 0
-        if efectividad < peor_efectividad:
-            peor_efectividad = efectividad
-            peor_jefatura = jefatura
-
-    if peor_jefatura:
-        recomendaciones.append(f"📉 Revisar efectividad de {peor_jefatura} ({round(peor_efectividad, 1)}%).")
-
-    modelo_riesgo = modelo_lider()
-    if modelo_riesgo != "N/D":
-        recomendaciones.append(f"🧊 Monitorear incidencias del modelo {modelo_riesgo}.")
-
-    if not recomendaciones:
-        return "\n✅ RECOMENDACIONES\nNo existen acciones prioritarias.\n"
-
-    respuesta = "🤖 RECOMENDACIONES AUTOMÁTICAS\n\n"
-    for idx, rec in enumerate(recomendaciones, start=1):
-        respuesta += f"{idx}. {rec}\n\n"
-
-    return respuesta
-
-
-# ==========================================
-# PRIORIDADES DEL DÍA
-# ==========================================
-def prioridades_del_dia():
-    solicitudes = obtener_solicitudes()
-    if not solicitudes:
-        return "\n📋 PRIORIDADES DEL DÍA\nNo existen datos suficientes.\n"
-
-    prioridades = []
-    criticas = []
-    hoy = datetime.now()
-
-    for fila in solicitudes:
-        estatus = fila.get("estatus", "")
-        if estatus in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]:
-            continue
-        try:
-            fecha = fila.get("fecha", "")
-            if fecha:
-                dias = (hoy - datetime.strptime(fecha[:10], "%Y-%m-%d")).days
-                if dias >= 7:
-                    criticas.append((fila.get("folio"), dias))
-        except Exception:
-            pass
-
-    if criticas:
-        prioridades.append(f"🚨 Solicitudes críticas: {len(criticas)}")
-
-    metricas = obtener_metricas()
-    if metricas["abiertas"] > 20:
-        prioridades.append(f"📂 Solicitudes abiertas: {metricas['abiertas']}")
-
-    riesgo = riesgo_operativo(solicitudes)
-    if "🔴 ALTO" in riesgo:
-        prioridades.append("⚠️ Existen jefaturas con riesgo ALTO.")
-
-    modelo = modelo_lider()
-    prioridades.append(f"🧊 Revisar incidencias del modelo {modelo}")
-
-    respuesta = "📋 PRIORIDADES DEL DÍA\n\n"
-    if not prioridades:
-        respuesta += "✅ No existen prioridades urgentes."
-        return respuesta
-
-    for idx, item in enumerate(prioridades, start=1):
-        respuesta += f"{idx}. {item}\n\n"
-
-    if criticas:
-        respuesta += "🚨 FOLIOS PRIORITARIOS\n\n"
-        for folio, dias in criticas[:10]:
-            respuesta += f"• {folio} ({dias} días)\n"
-
-    return respuesta
-
-
-# ==========================================
-# DIAGNÓSTICO EJECUTIVO
-# ==========================================
-def diagnostico_ejecutivo():
-    solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas()
-    total = metricas["total"]
-    productivas = metricas["productivas"]
-    efectividad = round((productivas / total) * 100, 1) if total else 0
-    criticas = total_criticas()
-    lider = jefatura_lider()
-    
-    diagnostico = f"""
-🤖 DIAGNÓSTICO EJECUTIVO
-📊 Situación General
-Solicitudes: {total}
-Abiertas: {metricas["abiertas"]}
-Críticas: {criticas}
-Efectividad: {efectividad}%
-🏆 Liderazgo Operativo
-{lider}
-"""
-    if criticas > 10:
-        diagnostico += "\n🚨 Observación\nExiste acumulación importante de solicitudes críticas.\nSe recomienda priorizar atención inmediata.\n"
-    elif criticas > 0:
-        diagnostico += "\n⚠️ Observación\nExisten solicitudes críticas que deben monitorearse.\n"
-    else:
-        diagnostico += "\n✅ Observación\nNo se detectan atrasos operativos importantes.\n"
-
-    if efectividad < 70:
-        diagnostico += "\n📉 Riesgo\nLa efectividad se encuentra por debajo del objetivo.\n"
-    else:
-        diagnostico += "\n📈 Desempeño\nLa efectividad es favorable.\n"
-
-    diagnostico += f"\n========================\n🚨 RIESGO OPERATIVO\n{riesgo_operativo(solicitudes)}\n"
-    return diagnostico
-
-
-# ==========================================
-# CENTRO EJECUTIVO
-# ==========================================
-def centro_ejecutivo():
-    solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas()
-    criticas = total_criticas()
-    total = metricas["total"]
-    productivas = metricas["productivas"]
-    efectividad = round((productivas / total) * 100, 1) if total else 0
-    
-    return f"""
-🏢 CENTRO EJECUTIVO TRADE
-================================
-📊 KPIS
-Solicitudes Totales: {metricas["total"]}
-Solicitudes Abiertas: {metricas["abiertas"]}
-Solicitudes Productivas: {metricas["productivas"]}
-Solicitudes Improductivas: {metricas["improductivas"]}
-Solicitudes Críticas: {criticas}
-Efectividad Global: {efectividad}%
-================================
-🚨 ALERTAS INTELIGENTES
-{alertas_inteligentes()}
-================================
-⚠️ RIESGO OPERATIVO
-{riesgo_operativo(solicitudes)}
-================================
-🔮 PREDICCIÓN DE SATURACIÓN
-{prediccion_saturacion(solicitudes)}
-================================
-📋 DIAGNÓSTICO EJECUTIVO
-{diagnostico_ejecutivo()}
-================================
-🏆 RANKING OPERATIVO
-{ranking_operativo()}
-================================
-📈 TENDENCIAS
-{tendencias_solicitudes()}
-================================
-🤖 INSIGHTS
-{generar_insights()}
-================================
-✅ RECOMENDACIONES
-• Revisar solicitudes críticas.
-• Atender jefaturas con riesgo ALTO.
-• Reducir solicitudes abiertas.
-• Monitorear diariamente la efectividad.
-• Revisar modelos con mayor incidencia.
-• Dar seguimiento a tendencias.
-================================
-✅ FIN DEL REPORTE EJECUTIVO
-"""
-
-
-# ==========================================
-# DASHBOARD EJECUTIVO
-# ==========================================
-def dashboard_ejecutivo():
-    metricas = obtener_metricas()
-    return {
-        "total": metricas["total"],
-        "abiertas": metricas["abiertas"],
-        "productivas": metricas["productivas"],
-        "improductivas": metricas["improductivas"],
-        "criticas": total_criticas()
-    }
-
-
-# ==========================================
-# RESPONDER IA
-# ==========================================
-def responder_trade_ai(pregunta):
-    pregunta = pregunta.upper().strip()
-
-    if pregunta == "RESUMEN":
-        return obtener_resumen_general()
-    if pregunta == "ABIERTAS":
-        return solicitudes_abiertas()
-    if pregunta == "PRODUCTIVAS":
-        return solicitudes_productivas()
-    if pregunta == "IMPRODUCTIVAS":
-        return solicitudes_improductivas()
-    if pregunta == "TOP MODELOS":
-        return top_modelos()
-
-    if any(x in pregunta for x in ["INCIDENCIA", "INCIDENCIAS"]):
-        return modelos_mayor_incidencia()
-    if pregunta == "TOP JEFATURAS":
-        return top_jefaturas()
-    if pregunta == "TOP CANALES":
-        return top_canales()
-    if pregunta == "TOP GEC":
-        return top_gec()
-
-    if any(x in pregunta for x in ["ASESOR", "ASESORES"]):
-        return top_asesores()
-
-    if any(x in pregunta for x in ["RUTA", "RUTAS"]) and "CUANTAS" not in pregunta:
-        return top_rutas()
-
-    if any(x in pregunta for x in ["USUARIO", "USUARIOS", "CAPTURA", "CAPTURAS", "CAPTURISTA", "CAPTURISTAS"]):
-        return top_usuarios()
-
-    if any(x in pregunta for x in ["EFECTIVIDAD", "POR JEFATURA", "DESEMPEÑO"]):
-        return efectividad_jefaturas()
-
-    if any(x in pregunta for x in ["CRITICA", "CRITICAS", "CRÍTICA", "CRÍTICAS", "ALERTA", "ALERTAS", "ATRASADA", "ATRASADAS", "PENDIENTE", "PENDIENTES"]):
-        return solicitudes_criticas()
-
-    if any(x in pregunta for x in ["TENDENCIA", "TENDENCIAS", "CRECIMIENTO", "AUMENTANDO", "SOLICITUDES MAS FRECUENTES", "SOLICITUDES MÁS FRECUENTES"]):
-        return tendencias_solicitudes()
-
-    if any(x in pregunta for x in ["RANKING", "LIDER", "LÍDER", "DESEMPEÑO GENERAL"]):
-        return ranking_operativo()
-
-    if any(x in pregunta for x in ["RESUMEN EJECUTIVO", "DASHBOARD EJECUTIVO"]):
-        return resumen_ejecutivo()
-
-    if any(x in pregunta for x in ["CENTRO EJECUTIVO", "TABLERO EJECUTIVO", "REPORTE EJECUTIVO", "ESTATUS GENERAL"]):
-        return centro_ejecutivo()
-
-    if any(x in pregunta for x in ["ALERTA INTELIGENTE", "ALERTAS INTELIGENTES", "ANOMALIAS", "ANOMALÍAS", "MONITOREO"]):
-        return alertas_inteligentes()
-
-    if any(x in pregunta for x in ["SATURACION", "SATURACIÓN", "PREDICCION", "PREDICCIÓN", "RIESGO FUTURO", "SATURACION OPERATIVA"]):
-        return prediccion_saturacion()
-
-    if "VS" in pregunta or "COMPARA" in pregunta or "COMPARAR" in pregunta:
-        return comparativo_inteligente(pregunta)
-
-    if any(x in pregunta for x in ["RIESGO", "RIESGOS", "RIESGO OPERATIVO"]):
-        return riesgo_operativo()
-
-    if any(x in pregunta for x in ["DIAGNOSTICO", "DIAGNÓSTICO", "DIAGNOSTICO EJECUTIVO", "ESTADO OPERATIVO"]):
-        return diagnostico_ejecutivo()
-
-    if any(x in pregunta for x in ["RECOMENDACION", "RECOMENDACIONES", "ACCIONES", "PRIORIDADES"]):
-        return recomendaciones_automaticas()
-
-    if any(x in pregunta for x in ["ANALISIS", "ANÁLISIS", "ANALISTA", "OPERACION", "OPERACIÓN", "QUE ESTA PASANDO", "QUÉ ESTÁ PASANDO", "QUE DEBO REVISAR", "QUÉ DEBO REVISAR"]):
-        return analista_trade()
-
-    if pregunta == "INSIGHTS":
-        return generar_insights()
-
-    if pregunta in ["ULTIMO FOLIO", "ÚLTIMO FOLIO"]:
-        return consultar_ultimo_folio()
-
-    if "FOLIO" in pregunta:
-        for palabra in pregunta.split():
-            if "TRD" in palabra:
-                return buscar_folio(palabra)
-
-    if any(x in pregunta for x in ["EXPORTA", "EXPORTAR", "REPORTE", "EXCEL"]):
-        resultado_exp = obtener_datos_exportacion(pregunta)
-        if not resultado_exp:
-            return "No se encontraron datos para exportar."
-        return f"""
-📁 REPORTE EXCEL GENERADO
-Archivo: {resultado_exp["archivo"]}
-Total de registros: {resultado_exp["registros"]}
-"""
-
-    if any(x in pregunta for x in ["MOSTRAR", "MUESTRA", "MUESTRAME", "MUÉSTRAME", "DETALLE", "FOLIOS"]):
-        detalle = detalle_operativo(pregunta)
-        if detalle:
-            return detalle
-
-    resultado_dinamico = procesar_consulta_dinamica(pregunta)
-    if resultado_dinamico:
-        return resultado_dinamico
-
-    return """No comprendí tu consulta. 
-Puedes escribir comandos como:
-• RESUMEN
-• CENTRO EJECUTIVO
-• TABLERO EJECUTIVO
-• REPORTE EJECUTIVO
-• ESTATUS GENERAL
-O consultar un folio directamente."""
-
-# ==========================================
-# INSIGHTS AUTOMÁTICOS
-# ==========================================
-
-def generar_insights():
-    try:
-        solicitudes = obtener_solicitudes()
-        if not solicitudes:
-            return "No hay suficientes datos para generar insights."
-        
-        metricas = obtener_metricas(solicitudes)
-        total = metricas["total"]
-        productivas = metricas["productivas"]
-        efectividad = round((productivas / total) * 100, 1) if total > 0 else 0
-        
-        insights = []
-        if efectividad > 80:
-            insights.append("• El nivel de efectividad general es óptimo (>80%).")
-        elif efectividad < 60:
-            insights.append("• Alerta: La efectividad general se encuentra por debajo del estándar esperado.")
-            
-        criticas = total_criticas(solicitudes)
-        if criticas > 0:
-            insights.append(f"• Se detectaron {criticas} solicitudes con antigüedad mayor a 7 días que requieren atención urgente.")
-        else:
-            insights.append("• Excelente control de tiempos: no hay solicitudes críticas críticas pendientes.")
-            
-        return "\n".join(insights)
-    except Exception as e:
-        return f"Error generando insights: {e}"
-
-
-# ==========================================
-# ENRUTADOR DE COMANDOS / RESPONDER IA
+# RESPONDER IA (ENRUTADOR DE COMANDOS ÚNICO)
 # ==========================================
 
 def responder_trade_ai(pregunta):
     if not pregunta:
         return "Por favor, escribe una pregunta o comando válido."
-    
+        
     p = pregunta.strip().upper()
     
-    # Detección de folios específicos
+    # Búsqueda de folios
     if p.startswith("FOLIO ") or "TRD-" in p:
         match = re.search(r'(TRD-\d+)', p)
         if match:
             return buscar_folio(match.group(1))
-        
+
     if "RESUMEN" in p and "EJECUTIVO" in p:
-        return resumen_ejecutivo()
+        return centro_ejecutivo()
     elif "RESUMEN" in p:
         return obtener_resumen_general()
-    elif "ABIERTAS" in p:
+    elif p == "ABIERTAS":
         return solicitudes_abiertas()
-    elif "PRODUCTIVAS" in p and "IM" not in p:
+    elif p == "PRODUCTIVAS":
         return solicitudes_productivas()
-    elif "IMPRODUCTIVAS" in p:
+    elif p == "IMPRODUCTIVAS":
         return solicitudes_improductivas()
-    elif "MODELO" in p or "INCIDENCIA" in p or "FALLAS" in p:
+    elif p == "TOP MODELOS" or p == "MODELOS":
         return top_modelos()
-    elif "JEFATURA" in p:
+    elif any(x in p for x in ["INCIDENCIA", "INCIDENCIAS", "FALLAS"]):
+        return modelos_mayor_incidencia()
+    elif p == "TOP JEFATURAS" or p == "JEFATURAS":
         return top_jefaturas()
-    elif "CANAL" in p:
+    elif p == "TOP CANALES" or p == "CANALES":
         return top_canales()
-    elif "GEC" in p:
+    elif p == "TOP GEC" or p == "GEC":
         return top_gec()
-    elif "ASESOR" in p:
+    elif p == "TOP ASESORES" or p == "ASESORES":
         return top_asesores()
-    elif "RUTA" in p:
+    elif p == "TOP RUTAS" or p == "RUTAS":
         return top_rutas()
-    elif "USUARIO" in p:
+    elif p == "TOP USUARIOS" or p == "USUARIOS":
         return top_usuarios()
     elif "EFECTIVIDAD" in p:
         return efectividad_jefaturas()
-    elif "CRITICA" in p or "ATRASADA" in p or "7 DÍAS" in p or "DIAS" in p:
+    elif any(x in p for x in ["CRITICA", "CRÍTICA", "CRITICAS", "CRÍTICAS", "ATRASADA", "7 DÍAS"]):
         return solicitudes_criticas()
-    elif "TENDENCIA" in p or "AUMENTANDO" in p or "FRECUENTE" in p or "CRECIMIENTO" in p:
+    elif any(x in p for x in ["TENDENCIA", "TENDENCIAS", "CRECIMIENTO"]):
         return tendencias_solicitudes()
     elif "RANKING" in p:
         return ranking_operativo()
@@ -1323,18 +1005,21 @@ def responder_trade_ai(pregunta):
         return centro_ejecutivo()
     elif "INSIGHT" in p:
         return generar_insights()
-    elif "PRIORIDAD" in p or "REVISAR HOY" in p or "URGENTE" in p:
+    elif any(x in p for x in ["PRIORIDAD", "REVISAR HOY", "URGENTE"]):
         return prioridades_del_dia()
+    elif "COMPARATIVO" in p or " VS " in p:
+        return comparativo_inteligente(p)
     else:
         return f"""
 No comprendí con exactitud tu solicitud: "{pregunta}"
 
-Te sugiero consultar alguno de los siguientes comandos:
+Te sugiero consultar alguno de los siguientes comandos o escribir "AYUDA":
 • RESUMEN GENERAL
 • SOLICITUDES ABIERTAS
 • TOP MODELOS
 • TOP JEFATURAS
 • CRITICAS
 • ALERTAS
+• CENTRO EJECUTIVO
 • O escribe directamente un folio como: FOLIO TRD-000001
 """
