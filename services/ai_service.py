@@ -1868,7 +1868,6 @@ def responder_trade_ai(pregunta):
     if any(
         x in pregunta
         for x in [
-            "EJECUTIVO",
             "RESUMEN EJECUTIVO",
             "DASHBOARD EJECUTIVO"
         ]
