@@ -30,7 +30,7 @@ def trade_ai():
 Bienvenido a Trade AI.
 Puedes consultar información operativa,
 folios, estadísticas e indicadores
-del sistema Trade.
+del sistema Trade (¡Con Inteligencia Artificial Gemini integrada!).
 """
     )
 
@@ -84,10 +84,10 @@ Estatus: {fila['estatus']}
 
     st.info(
         """
-💬 Puedes escribir preguntas naturales o comandos:
-¿Cuántas solicitudes abiertas hay? | Dame un resumen general.
-¿Cuál es el modelo más solicitado? | ¿Qué modelo presenta más incidencias?
-Machine Learning | Predictor de efectividad | FOLIO TRD-XXXXXX
+💬 Puedes usar comandos rápidos o invocar a Google Gemini escribiendo **IA** o **PREGUNTAR**:
+• `IA ¿Por qué crees que la jefatura con más carga tiene tantas solicitudes?`
+• `PREGUNTAR Redacta un correo ejecutivo para revisar las incidencias`
+• Comandos rápidos: RESUMEN GENERAL | ABIERTAS | TOP MODELOS | CRITICAS | FOLIO TRD-XXXXXX
 """
     )
 
@@ -116,7 +116,7 @@ Machine Learning | Predictor de efectividad | FOLIO TRD-XXXXXX
         if st.button("🏆 ASESORES", use_container_width=True):
             agregar_a_chat("TOP ASESORES")
     with col5:
-        if st.button("🛣️️ RUTAS", use_container_width=True):
+        if st.button("🛣 RUTAS", use_container_width=True):
             agregar_a_chat("TOP RUTAS")
     with col6:
         if st.button("📈 EFECTIVIDAD", use_container_width=True):
@@ -125,7 +125,7 @@ Machine Learning | Predictor de efectividad | FOLIO TRD-XXXXXX
     # ==========================================
     # ENTRADA DE CHAT (INPUT)
     # ==========================================
-    pregunta = st.chat_input("Pregunta algo sobre Trade...")
+    pregunta = st.chat_input("Escribe una instrucción o 'IA [pregunta]'...")
 
     if pregunta:
         resultado = responder_trade_ai(pregunta)
