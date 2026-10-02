@@ -8,3 +8,5 @@ openpyxl
 pillow
 supabase
 plotly
+google-genai
+scikit-learn
