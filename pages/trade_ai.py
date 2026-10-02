@@ -5,8 +5,10 @@ from services.ai_service import (
     ultimos_folios,
     generar_insights,
     centro_ejecutivo,
-    alertas_inteligentes
+    alertas_inteligentes,
+    predecir_efectividad_operativa
 )
+
 
 # ==========================================
 # FUNCIÓN AUXILIAR PARA EL CHAT
@@ -47,7 +49,7 @@ del sistema Trade.
         st.metric("❌ Improductivas", metricas["improductivas"])
 
     # ==========================================
-    # EXPANDERS (RESUMEN, ALERTAS, INSIGHTS)
+    # EXPANDERS (RESUMEN, ALERTAS, INSIGHTS, ML)
     # ==========================================
     with st.expander("🤖 Resumen Ejecutivo IA", expanded=True):
         st.success(centro_ejecutivo())
@@ -57,6 +59,14 @@ del sistema Trade.
 
     with st.expander("🤖 Insights Automáticos", expanded=True):
         st.info(generar_insights())
+
+    with st.expander("🧠 Modelo Predictivo (Machine Learning)", expanded=False):
+        if st.button("🚀 Ejecutar Entrenamiento y Predicción", use_container_width=True):
+            with st.spinner("Entrenando modelo con Scikit-Learn..."):
+                resultado_ml = predecir_efectividad_operativa()
+                st.success(resultado_ml)
+        else:
+            st.info("Haz clic para entrenar el modelo predictivo de efectividad con base en datos históricos de Supabase.")
 
     # ==========================================
     # ULTIMOS FOLIOS
@@ -74,10 +84,10 @@ Estatus: {fila['estatus']}
 
     st.info(
         """
-💬 Puedes escribir preguntas naturales:
+💬 Puedes escribir preguntas naturales o comandos:
 ¿Cuántas solicitudes abiertas hay? | Dame un resumen general.
 ¿Cuál es el modelo más solicitado? | ¿Qué modelo presenta más incidencias?
-FOLIO TRD-XXXXXX
+Machine Learning | Predictor de efectividad | FOLIO TRD-XXXXXX
 """
     )
 
@@ -106,7 +116,7 @@ FOLIO TRD-XXXXXX
         if st.button("🏆 ASESORES", use_container_width=True):
             agregar_a_chat("TOP ASESORES")
     with col5:
-        if st.button("🛣️ RUTAS", use_container_width=True):
+        if st.button("🛣️️ RUTAS", use_container_width=True):
             agregar_a_chat("TOP RUTAS")
     with col6:
         if st.button("📈 EFECTIVIDAD", use_container_width=True):
