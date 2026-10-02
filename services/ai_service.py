@@ -8,7 +8,7 @@ from supabase_config import supabase
 
 
 # ==========================================
-# OBTENER DATOS
+# OBTENER DATOS (CAPA DE DATOS)
 # ==========================================
 
 def obtener_solicitudes():
@@ -81,6 +81,72 @@ def ultimos_folios():
         )
     except Exception:
         return []
+
+
+# ==========================================
+# HELPERS PRIVADOS (DRY - NO REPETIR CÓDIGO)
+# ==========================================
+
+def _obtener_contador_solicitudes(solicitudes, campo):
+    contador = Counter()
+    for fila in solicitudes:
+        valor = fila.get(campo)
+        if valor:
+            contador[valor] += 1
+    return contador
+
+
+def _obtener_contador_detalles(campo="modelo"):
+    try:
+        detalles = (
+            supabase
+            .table("solicitud_detalle")
+            .select(campo)
+            .execute()
+            .data
+        )
+        if not detalles:
+            return Counter()
+        return Counter(fila.get(campo) for fila in detalles if fila.get(campo))
+    except Exception:
+        return Counter()
+
+
+def _formatear_top(titulo, contador, sufijo=""):
+    if not contador:
+        return f"{titulo}\n\nNo existen datos disponibles."
+    respuesta = f"{titulo}\n\n"
+    for nombre, cantidad in contador.most_common(10):
+        respuesta += f"• {nombre}: {cantidad}{sufijo}\n"
+    return respuesta
+
+
+def _lider_generico(solicitudes, campo, titulo_label):
+    if solicitudes is None:
+        solicitudes = obtener_solicitudes()
+    contador = _obtener_contador_solicitudes(solicitudes, campo)
+    lider = contador.most_common(1)
+    if not lider:
+        return "No existen datos."
+    return f"""
+🏆 {titulo_label.upper()} LÍDER
+{titulo_label.capitalize()}:
+{lider[0][0]}
+Solicitudes:
+{lider[0][1]}
+"""
+
+
+def _parsear_dias(fecha, hoy=None):
+    if not fecha:
+        return None
+    if hoy is None:
+        hoy = datetime.now()
+    try:
+        fecha_sol = datetime.strptime(fecha[:10], "%Y-%m-%d")
+        return (hoy - fecha_sol).days
+    except Exception:
+        return None
 
 
 # ==========================================
@@ -188,151 +254,60 @@ FOLIO TRD-000001
 
 def solicitudes_abiertas():
     metricas = obtener_metricas()
-    return f"""
-📂 SOLICITUDES ABIERTAS
-
-Total:
-{metricas["abiertas"]}
-"""
+    return f"\n📂 SOLICITUDES ABIERTAS\n\nTotal:\n{metricas['abiertas']}\n"
 
 
 def solicitudes_productivas():
     metricas = obtener_metricas()
-    return f"""
-✅ PRODUCTIVAS
-
-Total:
-{metricas["productivas"]}
-"""
+    return f"\n✅ PRODUCTIVAS\n\nTotal:\n{metricas['productivas']}\n"
 
 
 def solicitudes_improductivas():
     metricas = obtener_metricas()
-    return f"""
-❌ IMPRODUCTIVAS
-
-Total:
-{metricas["improductivas"]}
-"""
+    return f"\n❌ IMPRODUCTIVAS\n\nTotal:\n{metricas['improductivas']}\n"
 
 
 # ==========================================
 # TOP MODELOS / INCIDENCIAS
 # ==========================================
 
-def _obtener_contador_detalles(campo="modelo", limite=10):
-    try:
-        detalles = (
-            supabase
-            .table("solicitud_detalle")
-            .select(campo)
-            .execute()
-            .data
-        )
-        if not detalles:
-            return Counter()
-        contador = Counter()
-        for fila in detalles:
-            valor = fila.get(campo)
-            if valor:
-                contador[valor] += 1
-        return contador
-    except Exception:
-        return Counter()
-
-
 def top_modelos():
-    contador = _obtener_contador_detalles("modelo")
-    if not contador:
-        return "🏆 TOP MODELOS\n\nNo existen datos disponibles."
-    
-    respuesta = "🏆 TOP MODELOS\n\n"
-    for modelo, cantidad in contador.most_common(10):
-        respuesta += f"• {modelo}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🏆 TOP MODELOS", _obtener_contador_detalles("modelo"))
 
 
 def modelos_mayor_incidencia():
-    contador = _obtener_contador_detalles("modelo")
-    if not contador:
-        return """
-🚨 MODELOS CON MÁS INCIDENCIAS
-No existen datos disponibles.
-"""
-    respuesta = "🚨 MODELOS CON MÁS INCIDENCIAS\n\n"
-    for modelo, cantidad in contador.most_common(10):
-        respuesta += f"• {modelo}: {cantidad} incidencias\n"
-    return respuesta
+    return _formatear_top("🚨 MODELOS CON MÁS INCIDENCIAS", _obtener_contador_detalles("modelo"), sufijo=" incidencias")
 
 
 # ==========================================
-# TOPS GENERALES (JEFATURAS, CANALES, GEC, ASESORES, RUTAS, USUARIOS)
+# TOPS GENERALES UNIFICADOS
 # ==========================================
-
-def _obtener_contador_solicitudes(solicitudes, campo):
-    contador = Counter()
-    for fila in solicitudes:
-        valor = fila.get(campo)
-        if valor:
-            contador[valor] += 1
-    return contador
-
 
 def top_jefaturas():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "jefatura")
-    respuesta = "🏆 TOP JEFATURAS\n\n"
-    for nombre, cantidad in contador.most_common(10):
-        respuesta += f"• {nombre}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🏆 TOP JEFATURAS", _obtener_contador_solicitudes(obtener_solicitudes(), "jefatura"))
 
 
 def top_canales():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "canal")
-    respuesta = "🏆 TOP CANALES\n\n"
-    for nombre, cantidad in contador.most_common(10):
-        respuesta += f"• {nombre}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🏆 TOP CANALES", _obtener_contador_solicitudes(obtener_solicitudes(), "canal"))
 
 
 def top_gec():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "gec")
-    respuesta = "🏆 TOP GEC\n\n"
-    for nombre, cantidad in contador.most_common(10):
-        respuesta += f"• {nombre}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🏆 TOP GEC", _obtener_contador_solicitudes(obtener_solicitudes(), "gec"))
 
 
 def top_asesores():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "asesor")
-    respuesta = "🏆 TOP ASESORES\n\n"
-    for asesor, cantidad in contador.most_common(10):
-        respuesta += f"• {asesor}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🏆 TOP ASESORES", _obtener_contador_solicitudes(obtener_solicitudes(), "asesor"))
 
 
 def top_rutas():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "ruta")
-    respuesta = "🛣️ TOP RUTAS\n\n"
-    for ruta, cantidad in contador.most_common(10):
-        respuesta += f"• {ruta}: {cantidad}\n"
-    return respuesta
+    return _formatear_top("🛣️ TOP RUTAS", _obtener_contador_solicitudes(obtener_solicitudes(), "ruta"))
 
 
 def top_usuarios():
-    solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "usuario")
+    contador = _obtener_contador_solicitudes(obtener_solicitudes(), "usuario")
     if not contador:
         return "\n👨‍💼 TOP USUARIOS\nNo existen datos disponibles.\n"
-    
-    respuesta = "👨‍💼 TOP USUARIOS CAPTURISTAS\n\n"
-    for usuario, cantidad in contador.most_common(10):
-        respuesta += f"• {usuario}: {cantidad} solicitudes\n"
-    return respuesta
+    return _formatear_top("👨‍💼 TOP USUARIOS CAPTURISTAS", contador, sufijo=" solicitudes")
 
 
 # ==========================================
@@ -378,16 +353,9 @@ def total_criticas(solicitudes=None):
     for fila in solicitudes:
         if fila.get("estatus") in estatus_excluidos:
             continue
-        fecha = fila.get("fecha")
-        if not fecha:
-            continue
-        try:
-            fecha_sol = datetime.strptime(fecha[:10], "%Y-%m-%d")
-            dias = (hoy - fecha_sol).days
-            if dias >= 7:
-                total += 1
-        except Exception:
-            pass
+        dias = _parsear_dias(fila.get("fecha"), hoy)
+        if dias is not None and dias >= 7:
+            total += 1
     return total
 
 
@@ -403,17 +371,10 @@ def solicitudes_criticas(solicitudes=None):
     for fila in solicitudes:
         if fila.get("estatus") in estatus_excluidos:
             continue
-        fecha = fila.get("fecha")
-        if not fecha:
-            continue
-        try:
-            fecha_sol = datetime.strptime(fecha[:10], "%Y-%m-%d")
-            dias = (hoy - fecha_sol).days
-            if dias >= 7:
-                encontradas += 1
-                respuesta += f"• {fila.get('folio')} | {fila.get('negocio', 'N/D')} | {dias} días\n"
-        except Exception:
-            continue
+        dias = _parsear_dias(fila.get("fecha"), hoy)
+        if dias is not None and dias >= 7:
+            encontradas += 1
+            respuesta += f"• {fila.get('folio')} | {fila.get('negocio', 'N/D')} | {dias} días\n"
             
     if encontradas == 0:
         return """
@@ -435,11 +396,7 @@ def tendencias_solicitudes():
         contador = _obtener_contador_detalles("tipo_solicitud")
         if not contador:
             return "\n📈 TENDENCIAS\nNo existen datos suficientes.\n"
-            
-        respuesta = "📈 TENDENCIAS DE SOLICITUDES\n\n"
-        for tipo, cantidad in contador.most_common(10):
-            respuesta += f"• {tipo}: {cantidad} registros\n"
-        return respuesta
+        return _formatear_top("📈 TENDENCIAS DE SOLICITUDES", contador, sufijo=" registros")
     except Exception as e:
         return f"Error analizando tendencias: {e}"
 
@@ -449,51 +406,15 @@ def tendencias_solicitudes():
 # ==========================================
 
 def jefatura_lider(solicitudes=None):
-    if solicitudes is None:
-        solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "jefatura")
-    lider = contador.most_common(1)
-    if not lider:
-        return "No existen datos."
-    return f"""
-🏆 JEFATURA LÍDER
-Jefatura:
-{lider[0][0]}
-Solicitudes:
-{lider[0][1]}
-"""
+    return _lider_generico(solicitudes, "jefatura", "jefatura")
 
 
 def asesor_lider(solicitudes=None):
-    if solicitudes is None:
-        solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "asesor")
-    lider = contador.most_common(1)
-    if not lider:
-        return "No existen datos."
-    return f"""
-🏆 ASESOR LÍDER
-Asesor:
-{lider[0][0]}
-Solicitudes:
-{lider[0][1]}
-"""
+    return _lider_generico(solicitudes, "asesor", "asesor")
 
 
 def ruta_lider(solicitudes=None):
-    if solicitudes is None:
-        solicitudes = obtener_solicitudes()
-    contador = _obtener_contador_solicitudes(solicitudes, "ruta")
-    lider = contador.most_common(1)
-    if not lider:
-        return "No existen datos."
-    return f"""
-🏆 RUTA LÍDER
-Ruta:
-{lider[0][0]}
-Solicitudes:
-{lider[0][1]}
-"""
+    return _lider_generico(solicitudes, "ruta", "ruta")
 
 
 def ranking_operativo():
@@ -519,6 +440,7 @@ def modelo_lider():
 def _calcular_resumen_jefaturas(solicitudes):
     resumen = {}
     hoy = datetime.now()
+    estatus_excluidos = {"PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"}
     
     for fila in solicitudes:
         jefatura = fila.get("jefatura")
@@ -539,17 +461,12 @@ def _calcular_resumen_jefaturas(solicitudes):
         if estatus == "PRODUCTIVA":
             resumen[jefatura]["productivas"] += 1
             
-        if estatus not in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]:
+        if estatus not in estatus_excluidos:
             resumen[jefatura]["abiertas"] += 1
-            fecha = fila.get("fecha", "")
-            if fecha:
-                try:
-                    dias = (hoy - datetime.strptime(fecha[:10], "%Y-%m-%d")).days
-                    if dias >= 7:
-                        resumen[jefatura]["criticas"] += 1
-                except Exception:
-                    pass
-                    
+            dias = _parsear_dias(fila.get("fecha"), hoy)
+            if dias is not None and dias >= 7:
+                resumen[jefatura]["criticas"] += 1
+                
     return resumen
 
 
@@ -561,16 +478,14 @@ def grafica_jefaturas():
     solicitudes = obtener_solicitudes()
     contador = Counter(fila.get("jefatura") for fila in solicitudes if fila.get("jefatura"))
     df = pd.DataFrame(contador.items(), columns=["Jefatura", "Solicitudes"])
-    fig = px.bar(df, x="Jefatura", y="Solicitudes", title="Solicitudes por Jefatura")
-    return fig
+    return px.bar(df, x="Jefatura", y="Solicitudes", title="Solicitudes por Jefatura")
 
 
 def grafica_canales():
     solicitudes = obtener_solicitudes()
     contador = Counter(fila.get("canal") for fila in solicitudes if fila.get("canal"))
     df = pd.DataFrame(contador.items(), columns=["Canal", "Solicitudes"])
-    fig = px.pie(df, names="Canal", values="Solicitudes", title="Distribución por Canal")
-    return fig
+    return px.pie(df, names="Canal", values="Solicitudes", title="Distribución por Canal")
 
 
 def grafica_modelos():
@@ -586,12 +501,11 @@ def grafica_modelos():
         
     contador = Counter(fila.get("modelo") for fila in detalles if fila.get("modelo"))
     df = pd.DataFrame(contador.items(), columns=["Modelo", "Total"])
-    fig = px.bar(df, x="Modelo", y="Total", title="Top Modelos")
-    return fig
+    return px.bar(df, x="Modelo", y="Total", title="Top Modelos")
 
 
 # ==========================================
-# FUNCIONES UNIFICADAS Y SIN DUPLICADOS
+# FUNCIONES UNIFICADAS Y ANALÍTICAS
 # ==========================================
 
 def generar_insights():
@@ -663,12 +577,12 @@ Riesgo: {nivel}
 
 def diagnostico_ejecutivo():
     solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas()
+    metricas = obtener_metricas(solicitudes)
     total = metricas["total"]
     productivas = metricas["productivas"]
     efectividad = round((productivas / total) * 100, 1) if total else 0
-    criticas = total_criticas()
-    lider = jefatura_lider()
+    criticas = total_criticas(solicitudes)
+    lider = jefatura_lider(solicitudes)
     
     diagnostico = f"""
 🤖 DIAGNÓSTICO EJECUTIVO
@@ -698,8 +612,8 @@ Efectividad: {efectividad}%
 
 def centro_ejecutivo():
     solicitudes = obtener_solicitudes()
-    metricas = obtener_metricas()
-    criticas = total_criticas()
+    metricas = obtener_metricas(solicitudes)
+    criticas = total_criticas(solicitudes)
     total = metricas["total"]
     productivas = metricas["productivas"]
     efectividad = round((productivas / total) * 100, 1) if total else 0
@@ -747,10 +661,6 @@ Efectividad Global: {efectividad}%
 ✅ FIN DEL REPORTE EJECUTIVO
 """
 
-
-# ==========================================
-# OTRAS FUNCIONES COMPLEMENTARIAS
-# ==========================================
 
 def prediccion_saturacion(solicitudes=None):
     if solicitudes is None:
@@ -841,24 +751,19 @@ def prioridades_del_dia():
     prioridades = []
     criticas = []
     hoy = datetime.now()
+    estatus_excluidos = {"PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"}
 
     for fila in solicitudes:
-        estatus = fila.get("estatus", "")
-        if estatus in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]:
+        if fila.get("estatus") in estatus_excluidos:
             continue
-        try:
-            fecha = fila.get("fecha", "")
-            if fecha:
-                dias = (hoy - datetime.strptime(fecha[:10], "%Y-%m-%d")).days
-                if dias >= 7:
-                    criticas.append((fila.get("folio"), dias))
-        except Exception:
-            pass
+        dias = _parsear_dias(fila.get("fecha"), hoy)
+        if dias is not None and dias >= 7:
+            criticas.append((fila.get("folio"), dias))
 
     if criticas:
         prioridades.append(f"🚨 Solicitudes críticas: {len(criticas)}")
 
-    metricas = obtener_metricas()
+    metricas = obtener_metricas(solicitudes)
     if metricas["abiertas"] > 20:
         prioridades.append(f"📂 Solicitudes abiertas: {metricas['abiertas']}")
 
@@ -901,12 +806,13 @@ def comparativo_inteligente(pregunta):
             valor1, valor2 = encontrados[0], encontrados[1]
             
             total1 = total2 = productivas1 = productivas2 = abiertas1 = abiertas2 = 0
+            estatus_excluidos = {"PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"}
             
             for s in solicitudes:
                 val_campo = str(s.get(campo, "")).upper()
                 estatus = s.get("estatus")
                 is_prod = (estatus == "PRODUCTIVA")
-                is_abierta = estatus not in ["PRODUCTIVA", "IMPRODUCTIVA", "CERRADA"]
+                is_abierta = estatus not in estatus_excluidos
                 
                 if val_campo == valor1:
                     total1 += 1
