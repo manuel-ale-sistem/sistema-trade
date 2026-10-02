@@ -7,7 +7,51 @@ import streamlit as st
 from sklearn.ensemble import RandomForestClassifier
 from supabase_config import supabase
 
+from google import genai
+import os
 
+# ==========================================
+# INTEGRACIÓN DE GOOGLE GEMINI (IA GENERATIVA)
+# ==========================================
+
+def analizar_con_gemini(pregunta_usuario):
+    """
+    Toma los datos del centro ejecutivo y los envía a Gemini 
+    junto con la pregunta del usuario para un análisis avanzado.
+    """
+    # Obtenemos el contexto actual de tus datos de Supabase
+    contexto_operativo = centro_ejecutivo()
+    
+    # Inicializamos el cliente de Gemini
+    # Consejo de seguridad en sistemas: lo ideal es guardarlo en st.secrets o variables de entorno,
+    # pero puedes poner tu clave directamente entre comillas para pruebas rápidas.
+    api_key = st.secrets.get("GEMINI_API_KEY", "TU_API_KEY_AQUI")
+    
+    if api_key == "TU_API_KEY_AQUI" or not api_key:
+        return "⚠️ Configura tu API Key de Gemini en los secretos de Streamlit o en el código."
+
+    try:
+        client = genai.Client(api_key=api_key)
+        
+        # Armamos un prompt profesional que le da contexto a la IA sobre tu sistema Trade
+        prompt = f"""
+        Eres el Director de Inteligencia Artificial del sistema operativo Trade.
+        Tienes acceso al siguiente resumen ejecutivo de la base de datos en tiempo real:
+        
+        {contexto_operativo}
+        
+        Por favor, responde de manera analítica, clara y ejecutiva a la siguiente solicitud del usuario:
+        "{pregunta_usuario}"
+        """
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
+        
+    except Exception as e:
+        return f"Error al conectar con la API de Gemini: {e}"
 # ==========================================
 # OBTENER DATOS (CAPA DE DATOS)
 # ==========================================
