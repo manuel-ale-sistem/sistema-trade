@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from sklearn.ensemble import RandomForestClassifier
 from supabase_config import supabase
 
 
@@ -434,6 +435,72 @@ def modelo_lider():
 
 
 # ==========================================
+# MACHINE LEARNING PREDICTIVO (SCI-KIT LEARN)
+# ==========================================
+
+def predecir_efectividad_operativa(solicitudes=None):
+    if solicitudes is None:
+        solicitudes = obtener_solicitudes()
+    
+    df = pd.DataFrame(solicitudes)
+    if df.empty or 'estatus' not in df.columns:
+        return "🤖 MACHINE LEARNING\nNo hay suficientes datos para entrenar el modelo."
+        
+    df_ml = df[df['estatus'].isin(['PRODUCTIVA', 'IMPRODUCTIVA'])].copy()
+    
+    if len(df_ml) < 10:
+        return "🤖 MACHINE LEARNING\nSe necesitan al menos 10 registros con estatus definitivo (PRODUCTIVA/IMPRODUCTIVA) para entrenar el modelo predictivo."
+    
+    features = ['jefatura', 'canal', 'gec', 'negocio']
+    valid_features = [f for f in features if f in df_ml.columns]
+    
+    if not valid_features:
+        return "🤖 MACHINE LEARNING\nNo se encontraron las columnas necesarias en los datos."
+        
+    df_ml[valid_features] = df_ml[valid_features].fillna("N/D")
+    df_ml['target'] = df_ml['estatus'].apply(lambda x: 1 if x == 'PRODUCTIVA' else 0)
+    
+    X = df_ml[valid_features]
+    y = df_ml['target']
+    
+    X_encoded = pd.get_dummies(X, drop_first=True)
+    
+    if X_encoded.empty:
+        return "🤖 MACHINE LEARNING\nError al procesar las variables categóricas."
+        
+    try:
+        model = RandomForestClassifier(n_estimators=50, random_state=42)
+        model.fit(X_encoded, y)
+        
+        accuracy = model.score(X_encoded, y) * 100
+        
+        importances = model.feature_importances_
+        feature_names = X_encoded.columns
+        top_features = sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True)[:3]
+        
+        respuesta = f"""
+🧠 MODELO DE MACHINE LEARNING (SCIKIT-LEARN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Algoritmo: Random Forest Classifier
+• Precisión del modelo: {accuracy:.1f}%
+• Muestras de entrenamiento: {len(df_ml)} registros
+
+📊 FACTORES CRÍTICOS DE ÉXITO (PESO ML):
+"""
+        for feat, imp in top_features:
+            respuesta += f"• {feat} (Impacto: {imp*100:.1f}%)\n"
+            
+        respuesta += """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 CONCLUSIÓN DEL MODELO:
+El algoritmo ha identificado qué combinaciones operativas maximizan la probabilidad de éxito de una solicitud.
+"""
+        return respuesta
+    except Exception as e:
+        return f"Error al ejecutar el modelo de Machine Learning: {e}"
+
+
+# ==========================================
 # UTILIDAD PRIVADA: ANÁLISIS DE JEFATURAS
 # ==========================================
 
@@ -597,7 +664,7 @@ Efectividad: {efectividad}%
     if criticas > 10:
         diagnostico += "\n🚨 Observación\nExiste acumulación importante de solicitudes críticas.\nSe recomienda priorizar atención inmediata.\n"
     elif criticas > 0:
-        diagnostico += "\n⚠️ Observación\nExisten solicitudes críticas que deben monitorearse.\n"
+        diagnostico += "\n⚠️️ Observación\nExisten solicitudes críticas que deben monitorearse.\n"
     else:
         diagnostico += "\n✅ Observación\nNo se detectan atrasos operativos importantes.\n"
 
@@ -915,6 +982,8 @@ def responder_trade_ai(pregunta):
         return prioridades_del_dia()
     elif "COMPARATIVO" in p or " VS " in p:
         return comparativo_inteligente(p)
+    elif any(x in p for x in ["ML", "MACHINE LEARNING", "PREDICTOR", "MODELO PREDICTIVO"]):
+        return predecir_efectividad_operativa()
     else:
         return f"""
 No comprendí con exactitud tu solicitud: "{pregunta}"
@@ -927,5 +996,6 @@ Te sugiero consultar alguno de los siguientes comandos o escribir "AYUDA":
 • CRITICAS
 • ALERTAS
 • CENTRO EJECUTIVO
+• MACHINE LEARNING
 • O escribe directamente un folio como: FOLIO TRD-000001
 """
