@@ -8,12 +8,20 @@ from services.ai_service import (
     alertas_inteligentes
 )
 
+# ==========================================
+# FUNCIÓN AUXILIAR PARA EL CHAT
+# ==========================================
+def agregar_a_chat(comando):
+    """Auxiliar para evitar duplicar código en los botones rápidos."""
+    if "chat_trade_ai" not in st.session_state:
+        st.session_state["chat_trade_ai"] = []
+    
+    resultado = responder_trade_ai(comando)
+    st.session_state.chat_trade_ai.append((comando, resultado))
+
 
 def trade_ai():
-
-    st.subheader(
-        "🤖 Trade AI Assistant"
-    )
+    st.subheader("🤖 Trade AI Assistant")
 
     st.success(
         """
@@ -30,65 +38,30 @@ del sistema Trade.
     metricas = obtener_metricas()
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(
-            "📋 Solicitudes",
-            metricas["total"]
-        )
+        st.metric("📋 Solicitudes", metricas["total"])
     with col2:
-        st.metric(
-            "📂 Abiertas",
-            metricas["abiertas"]
-        )
+        st.metric("📂 Abiertas", metricas["abiertas"])
     with col3:
-        st.metric(
-            "✅ Productivas",
-            metricas["productivas"]
-        )
+        st.metric("✅ Productivas", metricas["productivas"])
     with col4:
-        st.metric(
-            "❌ Improductivas",
-            metricas["improductivas"]
-        )
+        st.metric("❌ Improductivas", metricas["improductivas"])
 
     # ==========================================
-    # RESUMEN EJECUTIVO IA
+    # EXPANDERS (RESUMEN, ALERTAS, INSIGHTS)
     # ==========================================
-    with st.expander(
-        "🤖 Resumen Ejecutivo IA",
-        expanded=True
-    ):
-        st.success(
-            centro_ejecutivo()
-        )
+    with st.expander("🤖 Resumen Ejecutivo IA", expanded=True):
+        st.success(centro_ejecutivo())
 
-    # ==========================================
-    # ALERTAS INTELIGENTES
-    # ==========================================
-    with st.expander(
-        "🚨 Alertas Inteligentes",
-        expanded=True
-    ):
-        st.warning(
-            alertas_inteligentes()
-        )
+    with st.expander("🚨 Alertas Inteligentes", expanded=True):
+        st.warning(alertas_inteligentes())
 
-    # ==========================================
-    # INSIGHTS AUTOMATICOS
-    # ==========================================
-    with st.expander(
-        "🤖 Insights Automáticos",
-        expanded=True
-    ):
-        st.info(
-            generar_insights()
-        )
+    with st.expander("🤖 Insights Automáticos", expanded=True):
+        st.info(generar_insights())
 
     # ==========================================
     # ULTIMOS FOLIOS
     # ==========================================
-    st.markdown(
-        "### 📋 Últimos Folios"
-    )
+    st.markdown("### 📋 Últimos Folios")
     folios = ultimos_folios()
     for fila in folios:
         st.write(
@@ -102,171 +75,79 @@ Estatus: {fila['estatus']}
     st.info(
         """
 💬 Puedes escribir preguntas naturales:
-¿Cuántas solicitudes abiertas hay?
-Dame un resumen general.
-¿Cuál es el modelo más solicitado?
-¿Qué modelo presenta más incidencias?
-¿Qué modelos tienen más fallas?
-Muéstrame incidencias.
-¿Qué jefatura tiene más solicitudes?
-Muéstrame los indicadores.
-¿Hay solicitudes críticas?
-Muéstrame las alertas operativas.
-Muéstrame las alertas inteligentes.
-¿Qué riesgos existen?
-¿Hay anomalías operativas?
-Monitoreo operativo.
-¿Qué solicitudes llevan más de 7 días?
-Solicitudes atrasadas.
-¿Qué solicitudes están aumentando?
-Muéstrame las tendencias.
-¿Cuáles son las solicitudes más frecuentes?
-¿Qué categoría tiene mayor crecimiento?
+¿Cuántas solicitudes abiertas hay? | Dame un resumen general.
+¿Cuál es el modelo más solicitado? | ¿Qué modelo presenta más incidencias?
 FOLIO TRD-XXXXXX
 """
     )
 
     # ==========================================
-    # BOTONES RÁPIDOS (FILA 1)
+    # INICIALIZACIÓN DE ESTADO DEL CHAT
+    # ==========================================
+    if "chat_trade_ai" not in st.session_state:
+        st.session_state["chat_trade_ai"] = []
+
+    # ==========================================
+    # BOTONES RÁPIDOS (FILA 1 Y 2)
     # ==========================================
     col1, col2, col3 = st.columns(3)
-
     with col1:
         if st.button("📊 RESUMEN", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "RESUMEN",
-                    responder_trade_ai("RESUMEN")
-                )
-            )
-
+            agregar_a_chat("RESUMEN")
     with col2:
         if st.button("🤖 INSIGHTS", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "INSIGHTS",
-                    responder_trade_ai("INSIGHTS")
-                )
-            )
-
+            agregar_a_chat("INSIGHTS")
     with col3:
         if st.button("📂 ABIERTAS", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "ABIERTAS",
-                    responder_trade_ai("ABIERTAS")
-                )
-            )
+            agregar_a_chat("ABIERTAS")
 
-    # ==========================================
-    # BOTONES RÁPIDOS (FILA 2)
-    # ==========================================
     col4, col5, col6 = st.columns(3)
-
     with col4:
         if st.button("🏆 ASESORES", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "TOP ASESORES",
-                    responder_trade_ai("TOP ASESORES")
-                )
-            )
-
+            agregar_a_chat("TOP ASESORES")
     with col5:
         if st.button("🛣️ RUTAS", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "TOP RUTAS",
-                    responder_trade_ai("TOP RUTAS")
-                )
-            )
-
+            agregar_a_chat("TOP RUTAS")
     with col6:
         if st.button("📈 EFECTIVIDAD", use_container_width=True):
-            if "chat_trade_ai" not in st.session_state:
-                st.session_state["chat_trade_ai"] = []
-            st.session_state.chat_trade_ai.append(
-                (
-                    "EFECTIVIDAD JEFATURAS",
-                    responder_trade_ai("EFECTIVIDAD JEFATURAS")
-                )
-            )
+            agregar_a_chat("EFECTIVIDAD JEFATURAS")
 
-    if (
-        "chat_trade_ai"
-        not in st.session_state
-    ):
-        st.session_state[
-            "chat_trade_ai"
-        ] = []
-
-    pregunta = st.chat_input(
-        "Pregunta algo sobre Trade..."
-    )
+    # ==========================================
+    # ENTRADA DE CHAT (INPUT)
+    # ==========================================
+    pregunta = st.chat_input("Pregunta algo sobre Trade...")
 
     if pregunta:
         resultado = responder_trade_ai(pregunta)
+        st.session_state["chat_trade_ai"].append((pregunta, resultado))
 
-        st.session_state["chat_trade_ai"].append(
-            (
-                pregunta,
-                resultado
-            )
-        )
+    # ==========================================
+    # RENDERIZADO DEL HISTORIAL DEL CHAT
+    # ==========================================
+    for preg, resp in reversed(st.session_state["chat_trade_ai"]):
+        with st.chat_message("user"):
+            st.write(preg)
 
-    for pregunta, respuesta in reversed(
-        st.session_state[
-            "chat_trade_ai"
-        ]
-    ):
-
-        with st.chat_message(
-            "user"
-        ):
-            st.write(
-                pregunta
-            )
-
-        with st.chat_message(
-            "assistant"
-        ):
-            if (
-                isinstance(respuesta, dict)
-                and "archivo" in respuesta
-            ):
+        with st.chat_message("assistant"):
+            if isinstance(resp, dict) and "archivo" in resp:
                 st.write(
                     f"""
 📁 REPORTE EXCEL GENERADO
 Archivo:
-{respuesta["archivo"]}
+{resp["archivo"]}
 Total de registros:
-{respuesta["registros"]}
+{resp["registros"]}
 """
                 )
                 try:
-                    with open(
-                        respuesta["archivo"],
-                        "rb"
-                    ) as file:
+                    with open(resp["archivo"], "rb") as file:
                         st.download_button(
                             label="⬇️ Descargar Reporte",
                             data=file,
-                            file_name=respuesta["archivo"],
+                            file_name=resp["archivo"],
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                 except Exception as e:
                     st.error(f"Error al preparar el archivo para descarga: {e}")
             else:
-                st.write(
-                    respuesta
-                )
+                st.write(resp)
